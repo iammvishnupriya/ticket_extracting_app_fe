@@ -24,26 +24,32 @@ export const ticketValidationSchema = z.object({
     .max(100, 'Ticket owner must be less than 100 characters'),
   
   contributor: z.string()
-    .max(500, 'Contributor must be less than 500 characters'),
+    .max(500, 'Contributor must be less than 500 characters')
+    .default(''),
   
   bugType: z.enum(['BUG', 'ENHANCEMENT', 'TASK'] as const),
   
   status: z.enum(['ASSIGNED', 'OPENED', 'CLOSED', 'FIXED', 'NEW', 'PENDING', 'RESOLVED'] as const),
   
   review: z.string()
-    .max(1000, 'Review must be less than 1000 characters'),
+    .max(1000, 'Review must be less than 1000 characters')
+    .default(''),
   
   impact: z.string()
-    .max(500, 'Impact must be less than 500 characters'),
+    .max(500, 'Impact must be less than 500 characters')
+    .default(''),
   
   contact: z.string()
-    .max(100, 'Contact must be less than 100 characters'),
+    .max(100, 'Contact must be less than 100 characters')
+    .default(''),
   
   employeeId: z.string()
-    .max(50, 'Employee ID must be less than 50 characters'),
+    .max(50, 'Employee ID must be less than 50 characters')
+    .default(''),
   
   employeeName: z.string()
-    .max(100, 'Employee name must be less than 100 characters'),
+    .max(100, 'Employee name must be less than 100 characters')
+    .default(''),
   
   messageId: z.string()
     .min(1, 'Message ID is required'),

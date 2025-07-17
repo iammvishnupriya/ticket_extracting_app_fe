@@ -33,12 +33,20 @@ function App() {
     setCurrentTicket,
     clearCurrentTicket,
     clearError,
+    resetSavingState,
   } = useTicket();
 
   // Check backend health on component mount
   useEffect(() => {
     checkBackendHealth();
   }, []);
+
+  // Reset saving state when switching to edit view
+  useEffect(() => {
+    if (currentView === 'edit') {
+      resetSavingState();
+    }
+  }, [currentView, resetSavingState]);
 
   const checkBackendHealth = async () => {
     setIsCheckingHealth(true);
@@ -53,9 +61,19 @@ function App() {
   };
 
   const handleProcessEmail = async (emailText: string) => {
-    await processEmailText(emailText);
-    if (!error) {
-      setCurrentView('display');
+    try {
+      console.log('handleProcessEmail called with:', emailText.substring(0, 100) + '...');
+      await processEmailText(emailText);
+      console.log('processEmailText completed, error:', error, 'currentTicket:', currentTicket);
+      if (!error) {
+        console.log('Switching to display view');
+        setCurrentView('display');
+      } else {
+        console.log('Staying on email view due to error:', error);
+      }
+    } catch (error) {
+      console.error('Error processing email:', error);
+      // Stay on email view if there's an error
     }
   };
 
@@ -94,18 +112,25 @@ function App() {
   };
 
   const handleEditTicket = () => {
+    console.log('handleEditTicket called, resetting saving state');
+    resetSavingState();
     setCurrentView('edit');
   };
 
   const handleViewTicket = (ticket: Ticket) => {
     // Set the current ticket for viewing
+    console.log('Viewing ticket:', ticket);
+    clearError();
     setCurrentTicket(ticket);
     setCurrentView('display');
   };
 
   const handleEditFromTable = (ticket: Ticket) => {
     // Set the current ticket for editing
+    console.log('handleEditFromTable called, resetting saving state');
+    clearError();
     setCurrentTicket(ticket);
+    resetSavingState();
     setCurrentView('edit');
   };
 
@@ -126,6 +151,7 @@ function App() {
   };
 
   const handleBackToEmail = () => {
+    clearError();
     setCurrentView('email');
   };
 
@@ -134,6 +160,7 @@ function App() {
   };
 
   const handleCancelEdit = () => {
+    resetSavingState();
     if (currentTicket && currentTicket.id) {
       // If we're editing an existing ticket, go back to display view
       setCurrentView('display');
@@ -296,22 +323,56 @@ function App() {
           />
         )}
 
-        {currentView === 'display' && currentTicket && (
-          <TicketDisplay
-            ticket={currentTicket}
-            onEdit={handleEditTicket}
-            onSave={handleSaveTicket}
-            isSaving={isSaving}
-          />
+        {currentView === 'display' && (
+          currentTicket ? (
+            <TicketDisplay
+              ticket={currentTicket}
+              onEdit={handleEditTicket}
+              onSave={handleSaveTicket}
+              onBack={handleBackToTable}
+              isSaving={isSaving}
+            />
+          ) : (
+            <div className="card animate-slide-up">
+              <div className="card-body">
+                <div className="text-center py-12">
+                  <p className="text-gray-600">No ticket selected for viewing.</p>
+                  <button
+                    onClick={handleBackToTable}
+                    className="mt-4 btn-primary"
+                  >
+                    Back to All Tickets
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
-        {currentView === 'edit' && currentTicket && (
-          <TicketEditor
-            ticket={currentTicket}
-            onSave={handleSaveTicket}
-            onCancel={handleCancelEdit}
-            isSaving={isSaving}
-          />
+        {currentView === 'edit' && (
+          currentTicket ? (
+            <TicketEditor
+              ticket={currentTicket}
+              onSave={handleSaveTicket}
+              onCancel={handleCancelEdit}
+              onBack={handleBackToTable}
+              isSaving={isSaving}
+            />
+          ) : (
+            <div className="card animate-slide-up">
+              <div className="card-body">
+                <div className="text-center py-12">
+                  <p className="text-gray-600">No ticket selected for editing.</p>
+                  <button
+                    onClick={handleBackToTable}
+                    className="mt-4 btn-primary"
+                  >
+                    Back to All Tickets
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {currentView === 'table' && (
@@ -324,6 +385,23 @@ function App() {
             onRefresh={loadAllTickets}
             onCreateNew={handleCreateNewTicket}
           />
+        )}
+
+        {/* Fallback for unknown view states */}
+        {!['email', 'display', 'edit', 'table'].includes(currentView) && (
+          <div className="card animate-slide-up">
+            <div className="card-body">
+              <div className="text-center py-12">
+                <p className="text-gray-600">Something went wrong. Please try again.</p>
+                <button
+                  onClick={handleBackToEmail}
+                  className="mt-4 btn-primary"
+                >
+                  Back to Email Processing
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
 

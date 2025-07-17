@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Ticket, 
   Check, 
   Copy, 
   Download, 
@@ -17,7 +16,9 @@ import {
   Settings,
   MessageSquare,
   Target,
-  Hash
+  Hash,
+  Ticket,
+  ArrowLeft
 } from 'lucide-react';
 import { PRIORITY_OPTIONS, BUG_TYPE_OPTIONS, STATUS_OPTIONS } from '../types/ticket';
 import type { Ticket as TicketType } from '../types/ticket';
@@ -28,6 +29,7 @@ interface TicketDisplayProps {
   ticket: TicketType;
   onEdit: () => void;
   onSave: () => void;
+  onBack?: () => void;
   isSaving: boolean;
 }
 
@@ -35,6 +37,7 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
   ticket,
   onEdit,
   onSave,
+  onBack,
   isSaving,
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -88,7 +91,7 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
         </div>
         <div className="flex items-start gap-2">
           <p className="text-sm text-gray-700 flex-1">
-            {maxLength && value.length > maxLength ? (
+            {maxLength && value && value.length > maxLength ? (
               <span title={value}>
                 {truncateText(value, maxLength)}
               </span>
@@ -136,6 +139,16 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="btn-secondary flex items-center gap-2"
+                title="Back to table"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+            )}
             <button
               onClick={handleDownload}
               className="btn-secondary flex items-center gap-2"

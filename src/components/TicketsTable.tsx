@@ -481,22 +481,34 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => onView(ticket)}
-                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('View button clicked for ticket:', ticket.id);
+                              onView(ticket);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
                             title="View ticket"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => onEdit(ticket)}
-                            className="text-green-600 hover:text-green-800 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Edit button clicked for ticket:', ticket.id);
+                              onEdit(ticket);
+                            }}
+                            className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
                             title="Edit ticket"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteConfirm(ticket.id!, ticket.ticketSummary)}
-                            className="text-red-600 hover:text-red-800 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Delete button clicked for ticket:', ticket.id);
+                              handleDeleteConfirm(ticket.id!, ticket.ticketSummary);
+                            }}
+                            className="text-red-600 hover:text-red-800 transition-colors p-1 hover:bg-red-50 rounded"
                             title="Delete ticket"
                           >
                             <Trash2 className="w-4 h-4" />

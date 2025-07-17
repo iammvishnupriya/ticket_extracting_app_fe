@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
@@ -15,7 +15,8 @@ import {
   Phone, 
   Target, 
   MessageSquare, 
-  Hash 
+  Hash,
+  ArrowLeft 
 } from 'lucide-react';
 import { 
   PRIORITY_OPTIONS, 
@@ -36,14 +37,37 @@ const PROJECT_OPTIONS = PROJECT_NAMES.map(project => ({
   label: project,
   color: '#6b7280' // Default gray color for projects
 }));
+
+// Contributor options
+const CONTRIBUTOR_NAMES = [
+  'Kalpana V',
+  'Nandhini P',
+  'Manoj',
+  'Afreena',
+  'Arun Prasad',
+  'Venmani',
+  'Athithya',
+  'Others'
+];
+
+const CONTRIBUTOR_OPTIONS = CONTRIBUTOR_NAMES.map(contributor => ({
+  value: contributor,
+  label: contributor,
+  color: '#6b7280' // Default gray color for contributors
+}));
+
 import { ticketValidationSchema } from '../utils/validation';
-import { getCharacterCount, isCharacterLimitExceeded } from '../utils/validation';
+import { getCharacterCount, isCharacterLimitExceeded, generateMessageId } from '../utils/validation';
 import toast from 'react-hot-toast';
+import { z } from 'zod';
+
+type TicketFormData = z.infer<typeof ticketValidationSchema>;
 
 interface TicketEditorProps {
   ticket: Ticket;
   onSave: (ticket: Ticket) => Promise<void>;
   onCancel: () => void;
+  onBack?: () => void;
   isSaving: boolean;
 }
 
@@ -51,10 +75,9 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   ticket,
   onSave,
   onCancel,
+  onBack,
   isSaving,
 }) => {
-  const [characterCounts, setCharacterCounts] = useState<Record<string, number>>({});
-
   const {
     control,
     handleSubmit,
@@ -62,45 +85,74 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
     formState: { errors, isValid },
     setValue,
     reset,
-  } = useForm<Ticket>({
+  } = useForm<TicketFormData>({
     resolver: zodResolver(ticketValidationSchema),
-    defaultValues: ticket,
+    defaultValues: {
+      ticketSummary: ticket.ticketSummary || '',
+      project: ticket.project || '',
+      issueDescription: ticket.issueDescription || '',
+      receivedDate: ticket.receivedDate || '',
+      priority: ticket.priority || 'LOW',
+      ticketOwner: ticket.ticketOwner || '',
+      contributor: ticket.contributor || '',
+      bugType: ticket.bugType || 'BUG',
+      status: ticket.status || 'NEW',
+      review: ticket.review || '',
+      impact: ticket.impact || '',
+      contact: ticket.contact || '',
+      employeeId: ticket.employeeId || '',
+      employeeName: ticket.employeeName || '',
+      messageId: ticket.messageId || generateMessageId(),
+    },
     mode: 'onChange',
   });
 
-  const watchedValues = watch();
+  console.log('TicketEditor rendered with isSaving:', isSaving);
+  console.log('Form validation state - isValid:', isValid, 'errors:', errors);
 
+  // Reset form when ticket changes
   useEffect(() => {
-    // Update character counts when form values change
-    const counts: Record<string, number> = {};
-    Object.entries(watchedValues).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        counts[key] = value.length;
-      }
+    reset({
+      ticketSummary: ticket.ticketSummary || '',
+      project: ticket.project || '',
+      issueDescription: ticket.issueDescription || '',
+      receivedDate: ticket.receivedDate || '',
+      priority: ticket.priority || 'LOW',
+      ticketOwner: ticket.ticketOwner || '',
+      contributor: ticket.contributor || '',
+      bugType: ticket.bugType || 'BUG',
+      status: ticket.status || 'NEW',
+      review: ticket.review || '',
+      impact: ticket.impact || '',
+      contact: ticket.contact || '',
+      employeeId: ticket.employeeId || '',
+      employeeName: ticket.employeeName || '',
+      messageId: ticket.messageId || generateMessageId(),
     });
-    setCharacterCounts(counts);
-  }, [watchedValues]);
+  }, [ticket, reset]);
 
-  const handleFormSubmit = async (data: Ticket) => {
+  // Simple function to get character count for a field
+  const getFieldCharacterCount = (fieldName: keyof TicketFormData) => {
+    const value = watch(fieldName);
+    return typeof value === 'string' ? value.length : 0;
+  };
+
+  const handleFormSubmit = async (data: TicketFormData) => {
     try {
-      await onSave(data);
+      console.log('Submitting ticket data:', data);
+      // Convert TicketFormData to Ticket by adding id if it exists
+      const ticketData: Ticket = {
+        ...data,
+        id: ticket.id
+      };
+      await onSave(ticketData);
     } catch (error) {
       console.error('Error saving ticket:', error);
       toast.error('Failed to save ticket. Please try again.');
     }
   };
 
-  const FormField: React.FC<{
-    name: keyof Ticket;
-    label: string;
-    type?: string;
-    placeholder?: string;
-    maxLength?: number;
-    required?: boolean;
-    icon?: React.ReactNode;
-    isTextarea?: boolean;
-    rows?: number;
-  }> = ({ 
+  const FormField = React.useCallback(({ 
     name, 
     label, 
     type = 'text', 
@@ -110,6 +162,16 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
     icon,
     isTextarea = false,
     rows = 3
+  }: {
+    name: keyof TicketFormData;
+    label: string;
+    type?: string;
+    placeholder?: string;
+    maxLength?: number;
+    required?: boolean;
+    icon?: React.ReactNode;
+    isTextarea?: boolean;
+    rows?: number;
   }) => (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -127,6 +189,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
             {isTextarea ? (
               <textarea
                 {...field}
+                value={field.value || ''}
                 id={name}
                 rows={rows}
                 placeholder={placeholder}
@@ -142,6 +205,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
             ) : (
               <input
                 {...field}
+                value={field.value || ''}
                 id={name}
                 type={type}
                 placeholder={placeholder}
@@ -174,15 +238,15 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
         </p>
       )}
     </div>
-  );
+  ), [control, errors, isSaving]);
 
-  const SelectField: React.FC<{
-    name: keyof Ticket;
+  const SelectField = React.useCallback(({ name, label, options, icon, required = false }: {
+    name: keyof TicketFormData;
     label: string;
     options: { value: string; label: string; color: string }[];
     icon?: React.ReactNode;
     required?: boolean;
-  }> = ({ name, label, options, icon, required = false }) => (
+  }) => (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         {icon}
@@ -219,7 +283,84 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
         </p>
       )}
     </div>
-  );
+  ), [control, errors, isSaving]);
+
+  const ContributorField: React.FC<{
+    name: keyof TicketFormData;
+    label: string;
+    icon?: React.ReactNode;
+    required?: boolean;
+  }> = ({ name, label, icon, required = false }) => {
+    const watchedValue = watch(name);
+    const [showCustomInput, setShowCustomInput] = useState(
+      watchedValue && !CONTRIBUTOR_NAMES.includes(String(watchedValue))
+    );
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          {icon}
+          <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+        </div>
+        
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <div className="space-y-2">
+              <select
+                value={CONTRIBUTOR_NAMES.includes(field.value || '') ? field.value || '' : 'Others'}
+                onChange={(e) => {
+                  if (e.target.value === 'Others') {
+                    setShowCustomInput(true);
+                    // Keep current value if it's custom, otherwise clear it
+                    if (CONTRIBUTOR_NAMES.includes(field.value || '')) {
+                      field.onChange('');
+                    }
+                  } else {
+                    setShowCustomInput(false);
+                    field.onChange(e.target.value);
+                  }
+                }}
+                className={`input-field ${
+                  errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                }`}
+                disabled={isSaving}
+              >
+                {CONTRIBUTOR_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              
+              {showCustomInput && (
+                <input
+                  type="text"
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  placeholder="Enter contributor name"
+                  className={`input-field ${
+                    errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                  }`}
+                  disabled={isSaving}
+                />
+              )}
+            </div>
+          )}
+        />
+        
+        {errors[name] && (
+          <p className="text-sm text-red-600 flex items-center gap-1">
+            <AlertCircle className="w-4 h-4" />
+            {errors[name]?.message}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="card animate-slide-up">
@@ -249,6 +390,20 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       </div>
 
       <div className="card-body">
+        {/* Debug: Show validation errors */}
+        {process.env.NODE_ENV === 'development' && Object.keys(errors).length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <h4 className="text-sm font-medium text-red-800 mb-2">Form Validation Errors:</h4>
+            <ul className="text-xs text-red-700 space-y-1">
+              {Object.entries(errors).map(([field, error]) => (
+                <li key={field}>
+                  <strong>{field}:</strong> {error?.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
           {/* Basic Information */}
           <div className="space-y-4">
@@ -374,13 +529,10 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
             </h3>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <FormField
+              <ContributorField
                 name="contributor"
                 label="Contributor"
-                placeholder="Additional contributors"
-                maxLength={500}
                 icon={<User className="w-4 h-4 text-gray-600" />}
-                isTextarea
               />
               
               <FormField
@@ -423,33 +575,48 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end gap-3 pt-6 border-t">
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={isSaving}
-              className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            
-            <button
-              type="submit"
-              disabled={isSaving || !isValid}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Save Ticket
-                </>
+          <div className="flex items-center justify-between pt-6 border-t">
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  disabled={isSaving}
+                  className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Table
+                </button>
               )}
-            </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isSaving}
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            
+              <button
+                type="submit"
+                disabled={isSaving || !isValid}
+                className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save Ticket
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

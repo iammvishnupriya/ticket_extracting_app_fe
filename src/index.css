@@ -22,6 +22,14 @@
     @apply block w-full rounded-lg border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200 px-3 py-2;
   }
   
+  .input-field:disabled {
+    @apply bg-gray-100 cursor-not-allowed opacity-60;
+  }
+  
+  .input-field textarea {
+    @apply resize-y min-h-20 max-h-60 scrollbar-thin;
+  }
+  
   .card {
     @apply bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden;
   }
@@ -57,6 +65,10 @@
 
 .animate-spin-slow {
   animation: spin 3s linear infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
 }
 
 .scrollbar-thin {

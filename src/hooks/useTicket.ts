@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Ticket, ApiError } from '../types/ticket';
 import { ticketService } from '../services/ticketService';
 import { validateTicket } from '../utils/validation';
@@ -26,6 +26,7 @@ export interface UseTicketReturn {
   clearCurrentTicket: () => void;
   clearError: () => void;
   validateCurrentTicket: () => boolean;
+  resetSavingState: () => void;
   resetState: () => void;
 }
 
@@ -37,6 +38,11 @@ export const useTicket = (): UseTicketReturn => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<TicketValidationErrors | null>(null);
+
+  // Debug: Monitor isSaving state changes
+  useEffect(() => {
+    console.log('isSaving state changed:', isSaving);
+  }, [isSaving]);
 
   const handleError = useCallback((error: any) => {
     console.error('Ticket hook error:', error);
@@ -66,10 +72,13 @@ export const useTicket = (): UseTicketReturn => {
     setValidationErrors(null);
 
     try {
+      console.log('Processing email text...');
       const ticket = await ticketService.processEmailText(emailText);
+      console.log('Email processed successfully:', ticket);
       setCurrentTicket(ticket);
       toast.success('Email processed successfully!');
     } catch (error) {
+      console.error('Error processing email:', error);
       handleError(error);
       setCurrentTicket(null);
     } finally {
@@ -78,14 +87,19 @@ export const useTicket = (): UseTicketReturn => {
   }, [handleError]);
 
   const saveTicket = useCallback(async (ticket: Ticket) => {
+    console.log('Saving ticket:', ticket);
+    
     const validation = validateTicket(ticket);
     
     if (!validation.success) {
+      console.log('Validation errors:', validation.errors);
       setValidationErrors(validation.errors || null);
       toast.error('Please fix validation errors before saving');
+      setIsSaving(false); // Reset saving state on validation failure
       return;
     }
 
+    console.log('saveTicket - setting isSaving to true');
     setIsSaving(true);
     setError(null);
     setValidationErrors(null);
@@ -107,19 +121,25 @@ export const useTicket = (): UseTicketReturn => {
     } catch (error) {
       handleError(error);
     } finally {
+      console.log('saveTicket - finally block: setting isSaving to false');
       setIsSaving(false);
     }
   }, [handleError]);
 
   const updateTicket = useCallback(async (id: number, ticket: Partial<Ticket>) => {
+    console.log('Updating ticket:', id, ticket);
+    
     const validation = validateTicket(ticket);
     
     if (!validation.success) {
+      console.log('Validation errors:', validation.errors);
       setValidationErrors(validation.errors || null);
       toast.error('Please fix validation errors before updating');
+      setIsSaving(false); // Reset saving state on validation failure
       return;
     }
 
+    console.log('updateTicket - setting isSaving to true');
     setIsSaving(true);
     setError(null);
     setValidationErrors(null);
@@ -137,6 +157,7 @@ export const useTicket = (): UseTicketReturn => {
     } catch (error) {
       handleError(error);
     } finally {
+      console.log('updateTicket - finally block: setting isSaving to false');
       setIsSaving(false);
     }
   }, [handleError]);
@@ -209,6 +230,11 @@ export const useTicket = (): UseTicketReturn => {
     setValidationErrors(null);
   }, []);
 
+  const resetSavingState = useCallback(() => {
+    console.log('resetSavingState called - setting isSaving to false');
+    setIsSaving(false);
+  }, []);
+
   const validateCurrentTicket = useCallback(() => {
     if (!currentTicket) return false;
     
@@ -249,6 +275,7 @@ export const useTicket = (): UseTicketReturn => {
     clearCurrentTicket,
     clearError,
     validateCurrentTicket,
+    resetSavingState,
     resetState,
   };
 };
