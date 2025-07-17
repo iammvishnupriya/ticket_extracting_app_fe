@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Eye, 
   Edit, 
@@ -10,7 +10,10 @@ import {
   SortDesc, 
   Hash,
   RefreshCw,
-  Plus
+  Plus,
+  ChevronDown,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import { 
   PRIORITY_OPTIONS, 
@@ -21,7 +24,7 @@ import type {
   Priority, 
   Status 
 } from '../types/ticket';
-import { formatDate, truncateText, downloadAsJSON } from '../utils/validation';
+import { formatDate, truncateText, downloadAsJSON, downloadAsExcel } from '../utils/validation';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
 import { PROJECT_NAMES } from '../constants/projects';
@@ -55,6 +58,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showFilters, setShowFilters] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -71,7 +76,19 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   const getStatusOption = (status: Status) => 
     STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
 
+  // Handle clicking outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowExportDropdown(false);
+      }
+    };
 
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Get unique projects for filter dropdown - combine predefined with any additional from tickets
   const uniqueProjects = React.useMemo(() => {
@@ -141,10 +158,39 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     }
   };
 
-  const handleExportAll = () => {
+  const handleExportJSON = () => {
     const filename = `tickets_export_${new Date().toISOString().split('T')[0]}.json`;
     downloadAsJSON(filteredAndSortedTickets, filename);
-    toast.success('Tickets exported successfully');
+    toast.success('Tickets exported as JSON successfully');
+    setShowExportDropdown(false);
+  };
+
+  const handleExportExcel = () => {
+    const filename = `tickets_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Transform data for Excel export with proper column headers
+    const excelData = filteredAndSortedTickets.map((ticket) => ({
+      'ID': ticket.id,
+      'Ticket Summary': ticket.ticketSummary,
+      'Project': ticket.project,
+      'Issue Description': ticket.issueDescription,
+      'Received Date': ticket.receivedDate,
+      'Priority': ticket.priority,
+      'Ticket Owner': ticket.ticketOwner,
+      'Contributor': ticket.contributor,
+      'Bug Type': ticket.bugType,
+      'Status': ticket.status,
+      'Review': ticket.review,
+      'Impact': ticket.impact,
+      'Contact': ticket.contact,
+      'Employee ID': ticket.employeeId,
+      'Employee Name': ticket.employeeName,
+      'Message ID': ticket.messageId
+    }));
+    
+    downloadAsExcel(excelData, filename, 'Tickets Export');
+    toast.success('Tickets exported as Excel successfully');
+    setShowExportDropdown(false);
   };
 
   const SortButton: React.FC<{ field: SortField; children: React.ReactNode }> = ({ field, children }) => (
@@ -200,14 +246,40 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               <RefreshCw className="w-4 h-4" />
               Refresh
             </button>
-            <button
-              onClick={handleExportAll}
-              className="btn-secondary flex items-center gap-2"
-              title="Export all tickets"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
+            {/* Export Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                className="btn-secondary flex items-center gap-2"
+                title="Export tickets"
+                disabled={filteredAndSortedTickets.length === 0}
+              >
+                <Download className="w-4 h-4" />
+                Export
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {showExportDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                  <div className="py-1">
+                    <button
+                      onClick={handleExportExcel}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                      Export as Excel
+                    </button>
+                    <button
+                      onClick={handleExportJSON}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      Export as JSON
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               onClick={onCreateNew}
               className="btn-primary flex items-center gap-2"

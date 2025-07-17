@@ -141,6 +141,27 @@ export const downloadAsJSON = (data: any, filename: string): void => {
   URL.revokeObjectURL(url);
 };
 
+export const downloadAsExcel = (data: any[], filename: string, sheetName: string = 'Sheet1'): void => {
+  // Dynamically import xlsx to avoid bundling issues
+  import('xlsx').then((XLSX) => {
+    // Create a new workbook
+    const workbook = XLSX.utils.book_new();
+    
+    // Convert data to worksheet
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    
+    // Add the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    
+    // Write the file
+    XLSX.writeFile(workbook, filename);
+  }).catch((error) => {
+    console.error('Error loading xlsx library:', error);
+    // Fallback to JSON download if xlsx fails
+    downloadAsJSON(data, filename.replace('.xlsx', '.json'));
+  });
+};
+
 export const generateMessageId = (): string => {
   return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };

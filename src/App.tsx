@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle, BarChart3 } from 'lucide-react';
 
 import { EmailInput } from './components/EmailInput';
 import { TicketDisplay } from './components/TicketDisplay';
 import { TicketEditor } from './components/TicketEditor';
 import { TicketsTable } from './components/TicketsTable';
+import { ConsolidateTable } from './components/ConsolidateTable';
 import { useTicket } from './hooks/useTicket';
 import type { Ticket } from './types/ticket';
 import { generateMessageId } from './utils/validation';
 import { ticketService } from './services/ticketService';
 
-type ViewMode = 'email' | 'display' | 'edit' | 'table';
+type ViewMode = 'email' | 'display' | 'edit' | 'table' | 'consolidate';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('email');
@@ -143,6 +144,10 @@ function App() {
   const handleViewAllTickets = async () => {
     await loadAllTickets();
     setCurrentView('table');
+  };
+
+  const handleViewConsolidate = () => {
+    setCurrentView('consolidate');
   };
 
   const handleCreateNewTicket = () => {
@@ -285,6 +290,13 @@ function App() {
               icon={<Database className="w-4 h-4" />}
               label="All Tickets"
             />
+            
+            <NavButton
+              active={currentView === 'consolidate'}
+              onClick={handleViewConsolidate}
+              icon={<BarChart3 className="w-4 h-4" />}
+              label="Consolidate"
+            />
           </div>
         </div>
       </nav>
@@ -387,8 +399,12 @@ function App() {
           />
         )}
 
+        {currentView === 'consolidate' && (
+          <ConsolidateTable />
+        )}
+
         {/* Fallback for unknown view states */}
-        {!['email', 'display', 'edit', 'table'].includes(currentView) && (
+        {!['email', 'display', 'edit', 'table', 'consolidate'].includes(currentView) && (
           <div className="card animate-slide-up">
             <div className="card-body">
               <div className="text-center py-12">

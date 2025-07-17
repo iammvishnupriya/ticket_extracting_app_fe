@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Ticket, ApiError } from '../types/ticket';
+import type { ConsolidateResponse } from '../types/consolidate';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -150,6 +151,19 @@ export const ticketService = {
     } catch (error) {
       console.error('Health check failed:', error);
       return false;
+    }
+  },
+
+  /**
+   * Get consolidation data (bug tracking summary by project)
+   */
+  async getConsolidateData(): Promise<ConsolidateResponse[]> {
+    try {
+      const response = await apiClient.get('/api/consolidate');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching consolidate data:', error);
+      throw error;
     }
   },
 };
