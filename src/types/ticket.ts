@@ -36,16 +36,16 @@ export interface ApiError {
 }
 
 export const PRIORITY_OPTIONS: { value: Priority; label: string; color: string }[] = [
-  { value: 'LOW', label: 'Low', color: 'bg-green-100 text-green-800' },
-  { value: 'MODERATE', label: 'Moderate', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'PRIORITY', label: 'Priority', color: 'bg-orange-100 text-orange-800' },
-  { value: 'HIGH', label: 'High', color: 'bg-red-100 text-red-800' },
+  { value: 'LOW', label: 'Low', color: 'badge-low' },
+  { value: 'MODERATE', label: 'Moderate', color: 'badge-medium' },
+  { value: 'PRIORITY', label: 'Priority', color: 'badge-warning' },
+  { value: 'HIGH', label: 'High', color: 'badge-high' },
 ];
 
 export const BUG_TYPE_OPTIONS: { value: BugType; label: string; color: string }[] = [
-  { value: 'BUG', label: 'Bug', color: 'bg-red-100 text-red-800' },
-  { value: 'ENHANCEMENT', label: 'Enhancement', color: 'bg-blue-100 text-blue-800' },
-  { value: 'TASK', label: 'Task', color: 'bg-purple-100 text-purple-800' },
+  { value: 'BUG', label: 'Bug', color: 'badge-error' },
+  { value: 'ENHANCEMENT', label: 'Enhancement', color: 'badge-info' },
+  { value: 'TASK', label: 'Task', color: 'badge-warning' },
 ];
 
 export const STATUS_OPTIONS: { value: Status; label: string; color: string }[] = [

@@ -363,28 +363,28 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   };
 
   return (
-    <div className="card animate-slide-up">
+    <div className="card animate-slide-up hover-lift">
       <div className="card-header">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
-              <FileText className="w-5 h-5 text-blue-600" />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-500 rounded-2xl shadow-lg glow-effect">
+              <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-xl font-bold text-gradient">
                 {ticket.id ? 'Edit Ticket' : 'Create New Ticket'}
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-secondary-600 font-medium">
                 {ticket.id ? `Editing ticket ID: ${ticket.id}` : 'Fill in the ticket details below'}
               </p>
             </div>
           </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-secondary-400 hover:text-accent-500 transition-all duration-300 hover:scale-110"
             disabled={isSaving}
           >
-            <X className="w-6 h-6" />
+            <X className="w-7 h-7" />
           </button>
         </div>
       </div>
