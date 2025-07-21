@@ -24,7 +24,7 @@ import type {
   Priority, 
   Status 
 } from '../types/ticket';
-import { formatDate, truncateText, downloadAsJSON, downloadAsExcel } from '../utils/validation';
+import { formatDate, truncateText, downloadAsJSON, downloadAsExcel, getContributorName } from '../utils/validation';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
 import { PROJECT_NAMES } from '../constants/projects';
@@ -177,7 +177,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       'Received Date': ticket.receivedDate,
       'Priority': ticket.priority,
       'Ticket Owner': ticket.ticketOwner,
-      'Contributor': ticket.contributor,
+      'Contributor': getContributorName(ticket.contributor),
       'Bug Type': ticket.bugType,
       'Status': ticket.status,
       'Review': ticket.review,

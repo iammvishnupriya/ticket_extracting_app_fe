@@ -64,7 +64,7 @@ export const useTicket = (): UseTicketReturn => {
     if (!emailText.trim()) {
       setError('Email text cannot be empty');
       toast.error('Email text cannot be empty');
-      return;
+      throw new Error('Email text cannot be empty');
     }
 
     setIsProcessing(true);
@@ -77,10 +77,12 @@ export const useTicket = (): UseTicketReturn => {
       console.log('Email processed successfully:', ticket);
       setCurrentTicket(ticket);
       toast.success('Email processed successfully!');
+      return ticket; // Return the ticket for the caller to use if needed
     } catch (error) {
       console.error('Error processing email:', error);
       handleError(error);
       setCurrentTicket(null);
+      throw error; // Re-throw so the caller knows there was an error
     } finally {
       setIsProcessing(false);
     }
@@ -88,6 +90,12 @@ export const useTicket = (): UseTicketReturn => {
 
   const saveTicket = useCallback(async (ticket: Ticket) => {
     console.log('Saving ticket:', ticket);
+    
+    // Set saving state first to indicate we're attempting to save
+    console.log('saveTicket - setting isSaving to true');
+    setIsSaving(true);
+    setError(null);
+    setValidationErrors(null);
     
     const validation = validateTicket(ticket);
     
@@ -99,12 +107,8 @@ export const useTicket = (): UseTicketReturn => {
       return;
     }
 
-    console.log('saveTicket - setting isSaving to true');
-    setIsSaving(true);
-    setError(null);
-    setValidationErrors(null);
-
     try {
+      // Let the ticket service handle the contributor transformation
       const savedTicket = await ticketService.saveTicket(ticket);
       setCurrentTicket(savedTicket);
       
@@ -127,25 +131,24 @@ export const useTicket = (): UseTicketReturn => {
   }, [handleError]);
 
   const updateTicket = useCallback(async (id: number, ticket: Partial<Ticket>) => {
-    console.log('Updating ticket:', id, ticket);
+    console.log('🎯 useTicket.updateTicket called with:', { id, ticket });
     
-    const validation = validateTicket(ticket);
-    
-    if (!validation.success) {
-      console.log('Validation errors:', validation.errors);
-      setValidationErrors(validation.errors || null);
-      toast.error('Please fix validation errors before updating');
-      setIsSaving(false); // Reset saving state on validation failure
-      return;
-    }
-
-    console.log('updateTicket - setting isSaving to true');
+    // Set saving state first to indicate we're attempting to update
+    console.log('🎯 useTicket.updateTicket - setting isSaving to true');
     setIsSaving(true);
     setError(null);
     setValidationErrors(null);
+    
+    // Skip validation here since the form already validates the data
+    // The validateTicket function is meant for full ticket objects, but we're dealing with partial updates
+    console.log('🎯 useTicket.updateTicket - skipping validation (already validated by form)');
 
     try {
+      console.log('🚀 useTicket.updateTicket - calling ticketService.updateTicket');
+      // Let the ticket service handle the contributor transformation
       const updatedTicket = await ticketService.updateTicket(id, ticket);
+      console.log('✅ useTicket.updateTicket - received response:', updatedTicket);
+      
       setCurrentTicket(updatedTicket);
       
       // Update allTickets
@@ -153,11 +156,13 @@ export const useTicket = (): UseTicketReturn => {
         prev.map(t => t.id === id ? updatedTicket : t)
       );
       
+      console.log('🎉 useTicket.updateTicket - success, showing toast');
       toast.success('Ticket updated successfully!');
     } catch (error) {
+      console.error('❌ useTicket.updateTicket - error occurred:', error);
       handleError(error);
     } finally {
-      console.log('updateTicket - finally block: setting isSaving to false');
+      console.log('🏁 useTicket.updateTicket - finally block: setting isSaving to false');
       setIsSaving(false);
     }
   }, [handleError]);
@@ -169,9 +174,16 @@ export const useTicket = (): UseTicketReturn => {
     try {
       const tickets = await ticketService.getAllTickets();
       setAllTickets(tickets);
+      console.log(`Successfully loaded ${tickets.length} tickets`);
     } catch (error) {
+      console.error('Failed to load tickets:', error);
       handleError(error);
       setAllTickets([]);
+      
+      // If it's a chunked encoding error, suggest a refresh
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'ERR_INCOMPLETE_CHUNKED_ENCODING') {
+        toast.error('Data loading was interrupted. Please try refreshing the page.');
+      }
     } finally {
       setIsLoading(false);
     }

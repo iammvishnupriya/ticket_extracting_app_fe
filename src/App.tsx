@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle, BarChart3 } from 'lucide-react';
+import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle, BarChart3, Users } from 'lucide-react';
 
 import { EmailInput } from './components/EmailInput';
 import { TicketDisplay } from './components/TicketDisplay';
 import { TicketEditor } from './components/TicketEditor';
 import { TicketsTable } from './components/TicketsTable';
 import { ConsolidateTable } from './components/ConsolidateTable';
+import { ContributorsManagement } from './components/ContributorsManagement';
 import { useTicket } from './hooks/useTicket';
 import type { Ticket } from './types/ticket';
 import { generateMessageId } from './utils/validation';
 import { ticketService } from './services/ticketService';
 
-type ViewMode = 'email' | 'display' | 'edit' | 'table' | 'consolidate';
+type ViewMode = 'email' | 'display' | 'edit' | 'table' | 'consolidate' | 'contributors';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('email');
@@ -36,6 +37,16 @@ function App() {
     clearError,
     resetSavingState,
   } = useTicket();
+
+  // Debug: Monitor currentView changes
+  useEffect(() => {
+    console.log('currentView changed to:', currentView);
+  }, [currentView]);
+
+  // Debug: Monitor currentTicket changes
+  useEffect(() => {
+    console.log('currentTicket changed to:', currentTicket ? `ticket with id ${currentTicket.id}` : 'null');
+  }, [currentTicket]);
 
   // Check backend health on component mount
   useEffect(() => {
@@ -65,41 +76,50 @@ function App() {
     try {
       console.log('handleProcessEmail called with:', emailText.substring(0, 100) + '...');
       await processEmailText(emailText);
-      console.log('processEmailText completed, error:', error, 'currentTicket:', currentTicket);
-      if (!error) {
-        console.log('Switching to display view');
-        setCurrentView('display');
-      } else {
-        console.log('Staying on email view due to error:', error);
-      }
+      console.log('processEmailText completed successfully - switching to display view');
+      setCurrentView('display');
     } catch (error) {
       console.error('Error processing email:', error);
-      // Stay on email view if there's an error
+      console.log('Staying on email view due to error');
     }
   };
 
   const handleSaveTicket = async (ticketData?: Ticket) => {
+    console.log('🎯 App.handleSaveTicket called with:', ticketData);
     const ticket = ticketData || currentTicket;
-    if (!ticket) return;
+    console.log('🎯 App.handleSaveTicket - final ticket:', ticket);
+    
+    if (!ticket) {
+      console.log('❌ App.handleSaveTicket - no ticket provided');
+      return;
+    }
 
     try {
       if (ticket.id) {
         // Update existing ticket
+        console.log('🔄 App.handleSaveTicket - updating existing ticket with ID:', ticket.id);
         await updateTicket(ticket.id, ticket);
+        console.log('✅ App.handleSaveTicket - update completed');
       } else {
         // Create new ticket - ensure we have a messageId
+        console.log('🆕 App.handleSaveTicket - creating new ticket');
         const ticketToSave = {
           ...ticket,
           messageId: ticket.messageId || generateMessageId(),
         };
         await saveTicket(ticketToSave);
+        console.log('✅ App.handleSaveTicket - save completed');
       }
       
+      console.log('🎯 App.handleSaveTicket - checking error state:', error);
       if (!error) {
+        console.log('🎯 App.handleSaveTicket - no error, setting view to display');
         setCurrentView('display');
+      } else {
+        console.log('❌ App.handleSaveTicket - error exists, not changing view');
       }
     } catch (error) {
-      console.error('Error saving/updating ticket:', error);
+      console.error('❌ App.handleSaveTicket - caught error:', error);
     }
   };
 
@@ -148,6 +168,10 @@ function App() {
 
   const handleViewConsolidate = () => {
     setCurrentView('consolidate');
+  };
+
+  const handleViewContributors = () => {
+    setCurrentView('contributors');
   };
 
   const handleCreateNewTicket = () => {
@@ -271,7 +295,10 @@ function App() {
             {currentTicket && (
               <NavButton
                 active={currentView === 'display'}
-                onClick={() => setCurrentView('display')}
+                onClick={() => {
+                  clearError();
+                  setCurrentView('display');
+                }}
                 icon={<Database className="w-4 h-4" />}
                 label="View Ticket"
               />
@@ -298,6 +325,13 @@ function App() {
               onClick={handleViewConsolidate}
               icon={<BarChart3 className="w-4 h-4" />}
               label="Consolidate"
+            />
+            
+            <NavButton
+              active={currentView === 'contributors'}
+              onClick={handleViewContributors}
+              icon={<Users className="w-4 h-4" />}
+              label="Contributors"
             />
           </div>
         </div>
@@ -405,8 +439,12 @@ function App() {
           <ConsolidateTable />
         )}
 
+        {currentView === 'contributors' && (
+          <ContributorsManagement />
+        )}
+
         {/* Fallback for unknown view states */}
-        {!['email', 'display', 'edit', 'table', 'consolidate'].includes(currentView) && (
+        {!['email', 'display', 'edit', 'table', 'consolidate', 'contributors'].includes(currentView) && (
           <div className="card animate-slide-up">
             <div className="card-body">
               <div className="text-center py-12">

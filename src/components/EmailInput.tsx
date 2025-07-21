@@ -202,16 +202,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
             </div>
           </div>
 
-          {/* Tips */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Tips for better extraction:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Include the complete email headers (From, To, Subject, Date)</li>
-              <li>• Keep original formatting when possible</li>
-              <li>• Include ticket numbers, employee IDs, and contact information</li>
-              <li>• Don't remove important details like signatures</li>
-            </ul>
-          </div>
+
         </form>
       </div>
     </div>

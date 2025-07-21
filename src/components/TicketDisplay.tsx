@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { PRIORITY_OPTIONS, BUG_TYPE_OPTIONS, STATUS_OPTIONS } from '../types/ticket';
 import type { Ticket as TicketType } from '../types/ticket';
-import { formatDate, copyToClipboard, downloadAsJSON, truncateText } from '../utils/validation';
+import { formatDate, copyToClipboard, downloadAsJSON, truncateText, getContributorName } from '../utils/validation';
 import toast from 'react-hot-toast';
 
 interface TicketDisplayProps {
@@ -164,23 +164,25 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
               <Edit className="w-4 h-4" />
               Edit
             </button>
-            <button
-              onClick={onSave}
-              disabled={isSaving}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  Save Ticket
-                </>
-              )}
-            </button>
+            {!ticket.id && (
+              <button
+                onClick={onSave}
+                disabled={isSaving}
+                className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Save Ticket
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -255,10 +257,10 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
             />
           </div>
 
-          {/* Assignment & Contact */}
+          {/* Assignment & Impact */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Assignment & Contact
+              Assignment & Impact
             </h3>
             
             <FieldRow
@@ -270,23 +272,18 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
             
             <FieldRow
               icon={<User className="w-4 h-4 text-gray-600" />}
-              label="Employee Name"
-              value={ticket.employeeName}
-              fieldKey="employeeName"
+              label="Contributor"
+              value={getContributorName(ticket.contributor)}
+              fieldKey="contributor"
+              maxLength={100}
             />
             
             <FieldRow
-              icon={<Hash className="w-4 h-4 text-gray-600" />}
-              label="Employee ID"
-              value={ticket.employeeId}
-              fieldKey="employeeId"
-            />
-            
-            <FieldRow
-              icon={<Phone className="w-4 h-4 text-gray-600" />}
-              label="Contact"
-              value={ticket.contact}
-              fieldKey="contact"
+              icon={<Target className="w-4 h-4 text-gray-600" />}
+              label="Impact"
+              value={ticket.impact}
+              fieldKey="impact"
+              maxLength={500}
             />
           </div>
 
@@ -297,19 +294,11 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
             </h3>
             
             <FieldRow
-              icon={<User className="w-4 h-4 text-gray-600" />}
-              label="Contributor"
-              value={ticket.contributor}
-              fieldKey="contributor"
-              maxLength={100}
-            />
-            
-            <FieldRow
-              icon={<Target className="w-4 h-4 text-gray-600" />}
-              label="Impact"
-              value={ticket.impact}
-              fieldKey="impact"
-              maxLength={100}
+              icon={<FileText className="w-4 h-4 text-gray-600" />}
+              label="Review"
+              value={ticket.review}
+              fieldKey="review"
+              maxLength={500}
             />
           </div>
         </div>

@@ -23,9 +23,27 @@ export const ticketValidationSchema = z.object({
     .min(1, 'Ticket owner is required')
     .max(100, 'Ticket owner must be less than 100 characters'),
   
-  contributor: z.string()
-    .max(500, 'Contributor must be less than 500 characters')
-    .default(''),
+  contributor: z.union([
+    z.string().max(500, 'Contributor must be less than 500 characters'),
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      email: z.string(),
+      employeeId: z.string(),
+      department: z.string(),
+      phone: z.string().optional(),
+      active: z.boolean(),
+      notes: z.string().optional(),
+      createdAt: z.string(),
+      updatedAt: z.string()
+    })
+  ]).default(''),
+  
+  contributorId: z.number().optional(),
+  
+  contributorName: z.string()
+    .max(500, 'Contributor name must be less than 500 characters')
+    .optional(),
   
   bugType: z.enum(['BUG', 'ENHANCEMENT', 'TASK'] as const),
   
@@ -164,4 +182,11 @@ export const downloadAsExcel = (data: any[], filename: string, sheetName: string
 
 export const generateMessageId = (): string => {
   return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+};
+
+export const getContributorName = (contributor: string | any): string => {
+  if (!contributor) return '';
+  if (typeof contributor === 'string') return contributor;
+  if (typeof contributor === 'object' && contributor.name) return contributor.name;
+  return '';
 };

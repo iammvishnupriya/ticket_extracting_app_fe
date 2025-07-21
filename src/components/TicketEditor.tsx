@@ -38,26 +38,12 @@ const PROJECT_OPTIONS = PROJECT_NAMES.map(project => ({
   color: '#6b7280' // Default gray color for projects
 }));
 
-// Contributor options
-const CONTRIBUTOR_NAMES = [
-  'Kalpana V',
-  'Nandhini P',
-  'Manoj',
-  'Afreena',
-  'Arun Prasad',
-  'Venmani',
-  'Athithya',
-  'Others'
-];
-
-const CONTRIBUTOR_OPTIONS = CONTRIBUTOR_NAMES.map(contributor => ({
-  value: contributor,
-  label: contributor,
-  color: '#6b7280' // Default gray color for contributors
-}));
+// Import contributor hook
+import { useContributors } from '../hooks/useContributors';
+import type { ContributorOption } from '../types/contributor';
 
 import { ticketValidationSchema } from '../utils/validation';
-import { getCharacterCount, isCharacterLimitExceeded, generateMessageId } from '../utils/validation';
+import { getCharacterCount, isCharacterLimitExceeded, generateMessageId, getContributorName } from '../utils/validation';
 import toast from 'react-hot-toast';
 import { z } from 'zod';
 
@@ -78,6 +64,8 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   onBack,
   isSaving,
 }) => {
+  // Use contributors hook
+  const { activeContributors, getContributorOptions, findContributorById, findContributorByName, isLoading: contributorsLoading } = useContributors();
   const {
     control,
     handleSubmit,
@@ -94,7 +82,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       receivedDate: ticket.receivedDate || '',
       priority: ticket.priority || 'LOW',
       ticketOwner: ticket.ticketOwner || '',
-      contributor: ticket.contributor || '',
+      contributor: getContributorName(ticket.contributor),
       bugType: ticket.bugType || 'BUG',
       status: ticket.status || 'NEW',
       review: ticket.review || '',
@@ -119,7 +107,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       receivedDate: ticket.receivedDate || '',
       priority: ticket.priority || 'LOW',
       ticketOwner: ticket.ticketOwner || '',
-      contributor: ticket.contributor || '',
+      contributor: getContributorName(ticket.contributor),
       bugType: ticket.bugType || 'BUG',
       status: ticket.status || 'NEW',
       review: ticket.review || '',
@@ -139,15 +127,48 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
 
   const handleFormSubmit = async (data: TicketFormData) => {
     try {
-      console.log('Submitting ticket data:', data);
-      // Convert TicketFormData to Ticket by adding id if it exists
+      console.log('TicketEditor - Submitting ticket data:', data);
+      
+      // Convert TicketFormData to Ticket and handle contributor field properly
       const ticketData: Ticket = {
         ...data,
         id: ticket.id
       };
+
+      // Handle contributor field based on the form data
+      if (data.contributor) {
+        // If contributor is a string (name), try to find the corresponding contributor object
+        if (typeof data.contributor === 'string') {
+          const foundContributor = findContributorByName(data.contributor);
+          if (foundContributor) {
+            // Use the full contributor object and set contributorId
+            ticketData.contributor = foundContributor;
+            ticketData.contributorId = foundContributor.id;
+            ticketData.contributorName = foundContributor.name;
+          } else {
+            // Keep it as a string (contributorName for the API)
+            ticketData.contributor = data.contributor;
+            ticketData.contributorName = data.contributor;
+            // Don't set contributorId if contributor not found in database
+            delete ticketData.contributorId;
+          }
+        }
+      }
+      
+      console.log('TicketEditor - Final ticket data being sent to onSave:', {
+        id: ticketData.id,
+        contributor: ticketData.contributor,
+        contributorId: ticketData.contributorId,
+        contributorName: ticketData.contributorName,
+        contributorType: typeof ticketData.contributor,
+        allFields: Object.keys(ticketData)
+      });
+      
       await onSave(ticketData);
+      
+      console.log('TicketEditor - onSave completed successfully');
     } catch (error) {
-      console.error('Error saving ticket:', error);
+      console.error('TicketEditor - Error saving ticket:', error);
       toast.error('Failed to save ticket. Please try again.');
     }
   };
@@ -292,9 +313,16 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
     required?: boolean;
   }> = ({ name, label, icon, required = false }) => {
     const watchedValue = watch(name);
-    const [showCustomInput, setShowCustomInput] = useState(
-      watchedValue && !CONTRIBUTOR_NAMES.includes(String(watchedValue))
-    );
+    const contributorOptions = getContributorOptions();
+    const [showCustomInput, setShowCustomInput] = useState(false);
+    
+    // Check if current value is a custom contributor (not in database)
+    const isCustomContributor = watchedValue && !contributorOptions.some(option => option.label === watchedValue);
+    
+    // Initialize custom input state
+    React.useEffect(() => {
+      setShowCustomInput(isCustomContributor);
+    }, [isCustomContributor]);
     
     return (
       <div className="space-y-2">
@@ -310,43 +338,54 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
           control={control}
           render={({ field }) => (
             <div className="space-y-2">
-              <select
-                value={CONTRIBUTOR_NAMES.includes(field.value || '') ? field.value || '' : 'Others'}
-                onChange={(e) => {
-                  if (e.target.value === 'Others') {
-                    setShowCustomInput(true);
-                    // Keep current value if it's custom, otherwise clear it
-                    if (CONTRIBUTOR_NAMES.includes(field.value || '')) {
-                      field.onChange('');
-                    }
-                  } else {
-                    setShowCustomInput(false);
-                    field.onChange(e.target.value);
-                  }
-                }}
-                className={`input-field ${
-                  errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                }`}
-                disabled={isSaving}
-              >
-                {CONTRIBUTOR_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              
-              {showCustomInput && (
-                <input
-                  type="text"
-                  value={field.value || ''}
-                  onChange={field.onChange}
-                  placeholder="Enter contributor name"
-                  className={`input-field ${
-                    errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                  }`}
-                  disabled={isSaving}
-                />
+              {contributorsLoading ? (
+                <div className="input-field flex items-center justify-center py-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-gray-300 border-t-primary-600 rounded-full mr-2"></div>
+                  Loading contributors...
+                </div>
+              ) : (
+                <>
+                  <select
+                    value={showCustomInput ? 'custom' : (field.value || '')}
+                    onChange={(e) => {
+                      if (e.target.value === 'custom') {
+                        setShowCustomInput(true);
+                        // Keep current value if it's already custom
+                        if (!isCustomContributor) {
+                          field.onChange('');
+                        }
+                      } else {
+                        setShowCustomInput(false);
+                        field.onChange(e.target.value);
+                      }
+                    }}
+                    className={`input-field ${
+                      errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                    }`}
+                    disabled={isSaving}
+                  >
+                    <option value="">Select contributor</option>
+                    {contributorOptions.map((option) => (
+                      <option key={option.value} value={option.label}>
+                        {option.label} {option.department && `(${option.department})`}
+                      </option>
+                    ))}
+                    <option value="custom">Other (Custom)</option>
+                  </select>
+                  
+                  {showCustomInput && (
+                    <input
+                      type="text"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      placeholder="Enter contributor name"
+                      className={`input-field ${
+                        errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
+                      disabled={isSaving}
+                    />
+                  )}
+                </>
               )}
             </div>
           )}
@@ -480,10 +519,10 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
             </div>
           </div>
 
-          {/* Assignment & Contact */}
+          {/* Assignment & Impact */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Assignment & Contact
+              Assignment & Impact
             </h3>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -496,30 +535,22 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
                 icon={<User className="w-4 h-4 text-gray-600" />}
               />
               
-              <FormField
-                name="employeeName"
-                label="Employee Name"
-                placeholder="Full name of the employee"
-                maxLength={100}
+              <ContributorField
+                name="contributor"
+                label="Contributor"
                 icon={<User className="w-4 h-4 text-gray-600" />}
               />
-              
-              <FormField
-                name="employeeId"
-                label="Employee ID"
-                placeholder="Employee identifier"
-                maxLength={50}
-                icon={<Hash className="w-4 h-4 text-gray-600" />}
-              />
-              
-              <FormField
-                name="contact"
-                label="Contact"
-                placeholder="Contact information"
-                maxLength={100}
-                icon={<Phone className="w-4 h-4 text-gray-600" />}
-              />
             </div>
+            
+            <FormField
+              name="impact"
+              label="Impact"
+              placeholder="Impact description"
+              maxLength={500}
+              icon={<Target className="w-4 h-4 text-gray-600" />}
+              isTextarea
+              rows={3}
+            />
           </div>
 
           {/* Technical Details */}
@@ -528,20 +559,39 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
               Technical Details
             </h3>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ContributorField
-                name="contributor"
-                label="Contributor"
-                icon={<User className="w-4 h-4 text-gray-600" />}
+            <FormField
+              name="review"
+              label="Review"
+              placeholder="Review comments and notes"
+              maxLength={1000}
+              icon={<MessageSquare className="w-4 h-4 text-gray-600" />}
+              isTextarea
+              rows={4}
+            />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <FormField
+                name="contact"
+                label="Contact"
+                placeholder="Contact information"
+                maxLength={100}
+                icon={<Phone className="w-4 h-4 text-gray-600" />}
               />
               
               <FormField
-                name="impact"
-                label="Impact"
-                placeholder="Impact description"
-                maxLength={500}
-                icon={<Target className="w-4 h-4 text-gray-600" />}
-                isTextarea
+                name="employeeId"
+                label="Employee ID"
+                placeholder="Employee ID"
+                maxLength={50}
+                icon={<Hash className="w-4 h-4 text-gray-600" />}
+              />
+              
+              <FormField
+                name="employeeName"
+                label="Employee Name"
+                placeholder="Employee name"
+                maxLength={100}
+                icon={<User className="w-4 h-4 text-gray-600" />}
               />
             </div>
           </div>
@@ -561,16 +611,6 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
               icon={<AlertCircle className="w-4 h-4 text-gray-600" />}
               isTextarea
               rows={6}
-            />
-            
-            <FormField
-              name="review"
-              label="Review"
-              placeholder="Review comments and notes"
-              maxLength={1000}
-              icon={<MessageSquare className="w-4 h-4 text-gray-600" />}
-              isTextarea
-              rows={4}
             />
           </div>
 

@@ -2,6 +2,19 @@ export type Priority = 'LOW' | 'PRIORITY' | 'MODERATE' | 'HIGH';
 export type BugType = 'BUG' | 'ENHANCEMENT' | 'TASK';
 export type Status = 'ASSIGNED' | 'OPENED' | 'CLOSED' | 'FIXED' | 'NEW' | 'PENDING' | 'RESOLVED';
 
+export interface Contributor {
+  id: number;
+  name: string;
+  email: string;
+  employeeId: string;
+  department: string;
+  phone?: string;
+  active: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Ticket {
   id?: number;
   ticketSummary: string;
@@ -10,7 +23,9 @@ export interface Ticket {
   receivedDate: string;
   priority: Priority;
   ticketOwner: string;
-  contributor: string;
+  contributor: string | Contributor; // Can be either string or Contributor object
+  contributorId?: number; // ID of existing contributor
+  contributorName?: string; // Name of contributor (fallback option)
   bugType: BugType;
   status: Status;
   review: string;
