@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle, BarChart3, Users } from 'lucide-react';
+import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle, BarChart3, Users, TestTube } from 'lucide-react';
 
 import { EmailInput } from './components/EmailInput';
 import { TicketDisplay } from './components/TicketDisplay';
@@ -8,12 +8,13 @@ import { TicketEditor } from './components/TicketEditor';
 import { TicketsTable } from './components/TicketsTable';
 import { ConsolidateTable } from './components/ConsolidateTable';
 import { ContributorsManagement } from './components/ContributorsManagement';
+import { FuzzyMatchingTest } from './components/FuzzyMatchingTest';
 import { useTicket } from './hooks/useTicket';
 import type { Ticket } from './types/ticket';
 import { generateMessageId } from './utils/validation';
 import { ticketService } from './services/ticketService';
 
-type ViewMode = 'email' | 'display' | 'edit' | 'table' | 'consolidate' | 'contributors';
+type ViewMode = 'email' | 'display' | 'edit' | 'table' | 'consolidate' | 'contributors' | 'fuzzy-test';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('email');
@@ -172,6 +173,10 @@ function App() {
 
   const handleViewContributors = () => {
     setCurrentView('contributors');
+  };
+
+  const handleViewFuzzyTest = () => {
+    setCurrentView('fuzzy-test');
   };
 
   const handleCreateNewTicket = () => {
@@ -333,6 +338,13 @@ function App() {
               icon={<Users className="w-4 h-4" />}
               label="Contributors"
             />
+            
+            <NavButton
+              active={currentView === 'fuzzy-test'}
+              onClick={handleViewFuzzyTest}
+              icon={<TestTube className="w-4 h-4" />}
+              label="Fuzzy Test"
+            />
           </div>
         </div>
       </nav>
@@ -443,8 +455,12 @@ function App() {
           <ContributorsManagement />
         )}
 
+        {currentView === 'fuzzy-test' && (
+          <FuzzyMatchingTest />
+        )}
+
         {/* Fallback for unknown view states */}
-        {!['email', 'display', 'edit', 'table', 'consolidate', 'contributors'].includes(currentView) && (
+        {!['email', 'display', 'edit', 'table', 'consolidate', 'contributors', 'fuzzy-test'].includes(currentView) && (
           <div className="card animate-slide-up">
             <div className="card-body">
               <div className="text-center py-12">
