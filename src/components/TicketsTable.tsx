@@ -39,7 +39,7 @@ interface TicketsTableProps {
   onCreateNew: () => void;
 }
 
-type SortField = 'id' | 'ticketSummary' | 'project' | 'receivedDate' | 'priority' | 'status' | 'ticketOwner';
+type SortField = 'id' | 'ticketSummary' | 'project' | 'receivedDate' | 'priority' | 'status' | 'ticketOwner' | 'contributor';
 type SortDirection = 'asc' | 'desc';
 
 export const TicketsTable: React.FC<TicketsTableProps> = ({
@@ -110,7 +110,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         ticket.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.ticketOwner.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.messageId.toLowerCase().includes(searchTerm.toLowerCase())
+        ticket.messageId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getContributorName(ticket.contributor).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -139,6 +140,9 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       if (sortField === 'receivedDate') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
+      } else if (sortField === 'contributor') {
+        aValue = getContributorName(a.contributor);
+        bValue = getContributorName(b.contributor);
       }
 
       if (typeof aValue === 'string') {
@@ -299,7 +303,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search summary, owner, employee..."
+                placeholder="Search summary, owner, contributor, employee..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input-field pl-10"
@@ -507,6 +511,9 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                     <SortButton field="ticketOwner">Owner</SortButton>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <SortButton field="contributor">Contributor</SortButton>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <SortButton field="receivedDate">Date</SortButton>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -546,6 +553,13 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {ticket.ticketOwner}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="max-w-xs">
+                          <p className="truncate" title={getContributorName(ticket.contributor)}>
+                            {getContributorName(ticket.contributor) || <span className="text-gray-400 italic">Not assigned</span>}
+                          </p>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(ticket.receivedDate)}
