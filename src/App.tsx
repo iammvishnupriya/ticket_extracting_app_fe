@@ -296,7 +296,7 @@ function App() {
               label="Process Email"
             />
             
-            {currentTicket && (
+            {/* {currentTicket && (
               <NavButton
                 active={currentView === 'display'}
                 onClick={() => {
@@ -315,7 +315,7 @@ function App() {
                 icon={<Settings className="w-4 h-4" />}
                 label="Edit Ticket"
               />
-            )}
+            )} */}
             
             <NavButton
               active={currentView === 'table'}
