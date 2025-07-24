@@ -566,7 +566,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex items-center gap-2">
-                          <button
+                          {/* <button
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log('View button clicked for ticket:', ticket.id);
@@ -598,7 +598,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                             title="Delete ticket"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>

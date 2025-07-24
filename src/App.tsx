@@ -17,7 +17,7 @@ import { ticketService } from './services/ticketService';
 type ViewMode = 'email' | 'display' | 'edit' | 'table' | 'consolidate' | 'contributors';
 
 function App() {
-  const [currentView, setCurrentView] = useState<ViewMode>('email');
+  const [currentView, setCurrentView] = useState<ViewMode>('table');
   const [isBackendHealthy, setIsBackendHealthy] = useState<boolean | null>(null);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
 
@@ -49,10 +49,11 @@ function App() {
     console.log('currentTicket changed to:', currentTicket ? `ticket with id ${currentTicket.id}` : 'null');
   }, [currentTicket]);
 
-  // Check backend health on component mount
+  // Check backend health and load tickets on component mount
   useEffect(() => {
     checkBackendHealth();
-  }, []);
+    loadAllTickets();
+  }, [loadAllTickets]);
 
   // Reset saving state when switching to edit view
   useEffect(() => {
