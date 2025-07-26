@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Mail, Database, Settings, RefreshCw, AlertCircle, CheckCircle, BarChart3, Users } from 'lucide-react';
+import { Mail, Database, RefreshCw, AlertCircle, CheckCircle, BarChart3, Users } from 'lucide-react';
 
 import { EmailInput } from './components/EmailInput';
 import { TicketDisplay } from './components/TicketDisplay';
@@ -67,7 +67,7 @@ function App() {
     try {
       const isHealthy = await ticketService.healthCheck();
       setIsBackendHealthy(isHealthy);
-    } catch (error) {
+    } catch {
       setIsBackendHealthy(false);
     } finally {
       setIsCheckingHealth(false);
@@ -122,15 +122,6 @@ function App() {
       }
     } catch (error) {
       console.error('❌ App.handleSaveTicket - caught error:', error);
-    }
-  };
-
-  const handleUpdateTicket = async (updatedTicket: Ticket) => {
-    if (!updatedTicket.id) return;
-
-    await updateTicket(updatedTicket.id, updatedTicket);
-    if (!error) {
-      setCurrentView('display');
     }
   };
 
@@ -353,7 +344,7 @@ function App() {
               <div>
                 <h3 className="text-sm font-medium text-red-800">Backend Connection Error</h3>
                 <p className="text-sm text-red-700 mt-1">
-                  Unable to connect to the backend server at localhost:8080. 
+                  Unable to connect to the backend server at localhost:5143. 
                   Please ensure the Spring Boot application is running.
                 </p>
                 <button

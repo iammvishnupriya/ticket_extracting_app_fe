@@ -372,7 +372,8 @@ export const contributorService = {
           try {
             const text = e.target?.result as string;
             const lines = text.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            // Skip header line
+            lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
             
             let success = 0;
             const errors: string[] = [];

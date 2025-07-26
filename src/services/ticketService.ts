@@ -2,7 +2,8 @@ import axios from 'axios';
 import type { Ticket, ApiError } from '../types/ticket';
 import type { ConsolidateResponse } from '../types/consolidate';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// Use relative URL in development to work with Vite proxy, full URL in production
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5143');
 
 // Retry utility for handling network issues
 const retryRequest = async <T>(
@@ -71,7 +72,7 @@ apiClient.interceptors.response.use(
     let message = 'An unexpected error occurred';
     
     if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-      message = 'Unable to connect to the backend server. Please ensure the Spring Boot application is running on port 8080.';
+      message = 'Unable to connect to the backend server. Please ensure the Spring Boot application is running on port 5143.';
     } else if (error.code === 'ERR_INCOMPLETE_CHUNKED_ENCODING') {
       message = 'Response from server was incomplete. This may be due to a large dataset or server timeout.';
     } else if (error.response?.data?.message) {
@@ -117,23 +118,41 @@ export const ticketService = {
       // Transform the ticket data to match backend expectations
       const ticketData = { ...ticket };
       
-      // Handle contributor field - backend might expect it to be null
-      if (ticket.contributor !== undefined) {
-        if (typeof ticket.contributor === 'string') {
-          // If it's a string (like an email), set to null and let backend handle via contributorId
-          ticketData.contributor = null;
-        } else if (ticket.contributor && typeof ticket.contributor === 'object') {
-          // If it's an object, extract the ID and set contributor to null
-          if (ticket.contributor.id) {
-            ticketData.contributorId = ticket.contributor.id;
-          }
-          ticketData.contributor = null;
+      // Handle multiple contributors (new format)
+      if (ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0) {
+        // Send contributors array to backend
+        ticketData.contributors = ticket.contributors;
+        ticketData.contributorIds = ticket.contributorIds || [];
+        ticketData.contributorNames = ticket.contributorNames || [];
+        
+        // For backward compatibility, set first contributor as primary
+        const firstContributor = ticket.contributors[0];
+        if (typeof firstContributor === 'string') {
+          ticketData.contributor = firstContributor;
+          ticketData.contributorName = firstContributor;
+        } else if (firstContributor && typeof firstContributor === 'object') {
+          ticketData.contributor = firstContributor;
+          ticketData.contributorId = firstContributor.id;
+          ticketData.contributorName = firstContributor.name;
         }
-      }
-      
-      // Keep contributorId if it exists (backend will use this to link contributor)
-      if (ticket.contributorId) {
-        ticketData.contributorId = ticket.contributorId;
+      } else {
+        // Handle legacy single contributor field
+        if (ticket.contributor !== undefined) {
+          if (typeof ticket.contributor === 'string') {
+            ticketData.contributor = ticket.contributor;
+            ticketData.contributorName = ticket.contributor;
+          } else if (ticket.contributor && typeof ticket.contributor === 'object') {
+            if (ticket.contributor.id) {
+              ticketData.contributorId = ticket.contributor.id;
+            }
+            ticketData.contributor = ticket.contributor;
+          }
+        }
+        
+        // Keep contributorId if it exists (backend will use this to link contributor)
+        if (ticket.contributorId) {
+          ticketData.contributorId = ticket.contributorId;
+        }
       }
       
       const response = await apiClient.post('/api/tickets', ticketData);
@@ -149,52 +168,103 @@ export const ticketService = {
    */
   async updateTicket(id: number, ticket: Partial<Ticket>): Promise<Ticket> {
     try {
-      // Transform the ticket data to match the new API expectations
+      // Transform the ticket data to match the backend expectations
       const ticketData: any = { ...ticket };
       
       // Ensure id is included in the request body
       ticketData.id = id;
       
-      // Handle contributor field according to the new API specification
-      if (ticket.contributor !== undefined) {
+      // Handle contributors with a backend-safe approach
+      if (ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0) {
+        // Process multiple contributors but send in a way backend can handle
+        const contributorIds: number[] = [];
+        const contributorNames: string[] = [];
+        
+        ticket.contributors.forEach(contributor => {
+          if (typeof contributor === 'string') {
+            contributorNames.push(contributor);
+          } else if (contributor && typeof contributor === 'object' && contributor.id) {
+            contributorIds.push(contributor.id);
+            contributorNames.push(contributor.name);
+          }
+        });
+        
+        // Send arrays as comma-separated strings to avoid serialization issues
+        if (contributorIds.length > 0) {
+          ticketData.contributorIds = contributorIds.join(',');
+        }
+        if (contributorNames.length > 0) {
+          ticketData.contributorNames = contributorNames.join(',');
+        }
+        
+        // For backward compatibility, set first contributor as primary
+        const firstContributor = ticket.contributors[0];
+        if (typeof firstContributor === 'string') {
+          ticketData.contributorName = firstContributor;
+        } else if (firstContributor && typeof firstContributor === 'object') {
+          if (firstContributor.id) {
+            ticketData.contributorId = firstContributor.id;
+          }
+          if (firstContributor.name) {
+            ticketData.contributorName = firstContributor.name;
+          }
+        }
+        
+        // Remove the contributors array to avoid backend issues
+        delete ticketData.contributors;
+        delete ticketData.contributor;
+      } else if (ticket.contributor) {
+        // Handle legacy single contributor field
         if (typeof ticket.contributor === 'string') {
-          // Option 3: Just contributor name (fallback)
           ticketData.contributorName = ticket.contributor;
-          // Remove the contributor field as it's not expected in this format
           delete ticketData.contributor;
         } else if (ticket.contributor && typeof ticket.contributor === 'object') {
-          // Option 1: Full contributor object
-          ticketData.contributor = {
-            id: ticket.contributor.id,
-            name: ticket.contributor.name,
-            email: ticket.contributor.email,
-            employeeId: ticket.contributor.employeeId,
-            department: ticket.contributor.department,
-            phone: ticket.contributor.phone,
-            active: ticket.contributor.active,
-            notes: ticket.contributor.notes
-          };
-          // Also set contributorId for Option 2
           if (ticket.contributor.id) {
             ticketData.contributorId = ticket.contributor.id;
           }
+          if (ticket.contributor.name) {
+            ticketData.contributorName = ticket.contributor.name;
+          }
+          delete ticketData.contributor;
         }
+      } else {
+        // Clean up any leftover contributor fields
+        delete ticketData.contributors;
+        delete ticketData.contributor;
+        delete ticketData.contributorIds;
+        delete ticketData.contributorNames;
       }
       
-      // Option 2: Just contributor ID (most common) - if contributorId exists but no contributor object
-      if (ticket.contributorId && !ticketData.contributor) {
-        ticketData.contributorId = ticket.contributorId;
-      }
+      // Ensure all string fields are properly handled
+      const stringFields = [
+        'ticketSummary', 'project', 'issueDescription', 'receivedDate', 
+        'priority', 'ticketOwner', 'bugType', 'status', 'review', 
+        'impact', 'contact', 'employeeId', 'employeeName', 'messageId',
+        'contributorName'
+      ];
+      
+      stringFields.forEach(field => {
+        if (ticketData[field] !== undefined && ticketData[field] !== null) {
+          // Ensure it's a string
+          if (Array.isArray(ticketData[field])) {
+            // If it's an array, take the first element or convert to empty string
+            ticketData[field] = ticketData[field].length > 0 ? String(ticketData[field][0]) : '';
+          } else {
+            ticketData[field] = String(ticketData[field]);
+          }
+        }
+      });
       
       // Debug: log what we're sending
       console.log('Sending edit-json update data:', {
         id,
         endpoint: `/api/tickets/${id}/edit-json`,
-        contributor: ticketData.contributor,
         contributorId: ticketData.contributorId,
         contributorName: ticketData.contributorName,
-        originalContributor: ticket.contributor,
-        fullTicketData: ticketData
+        contributorIds: ticketData.contributorIds,
+        contributorNames: ticketData.contributorNames,
+        originalContributors: ticket.contributors,
+        cleanedData: ticketData
       });
       
       // Use the correct edit-json endpoint
@@ -288,6 +358,44 @@ export const ticketService = {
     } catch (error) {
       console.error('Error fetching consolidate data:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Get all project names from the backend
+   * First tries /api/projects endpoint, then falls back to extracting from tickets
+   */
+  async getProjectNames(): Promise<string[]> {
+    try {
+      // First try dedicated projects endpoint
+      console.log('🔍 Fetching projects from /api/projects...');
+      const response = await apiClient.get('/api/projects');
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log('✅ Successfully fetched projects from dedicated endpoint:', response.data.length);
+        return response.data.filter(project => project && typeof project === 'string' && project.trim().length > 0);
+      } else {
+        throw new Error('Invalid response format from /api/projects');
+      }
+    } catch (error: any) {
+      console.warn('⚠️ Dedicated projects endpoint failed:', error?.response?.status === 404 ? 'Endpoint not found' : error?.message);
+      
+      // Fallback: extract project names from existing tickets
+      try {
+        console.log('🔄 Falling back to extracting projects from tickets...');
+        const tickets = await this.getAllTickets();
+        const projectNames = Array.from(new Set(
+          tickets
+            .map(ticket => ticket.project)
+            .filter(project => project && project.trim().length > 0)
+        )).sort();
+        
+        console.log('✅ Extracted projects from tickets:', projectNames.length);
+        return projectNames;
+      } catch (ticketError) {
+        console.error('❌ Failed to extract projects from tickets:', ticketError);
+        throw new Error('Unable to fetch projects from backend or tickets');
+      }
     }
   },
 

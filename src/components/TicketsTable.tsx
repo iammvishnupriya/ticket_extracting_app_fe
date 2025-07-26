@@ -24,10 +24,10 @@ import type {
   Priority, 
   Status 
 } from '../types/ticket';
-import { formatDate, truncateText, downloadAsJSON, downloadAsExcel, getContributorName } from '../utils/validation';
+import { formatDate, truncateText, downloadAsJSON, downloadAsExcel, getContributorName, getContributorDisplayValue } from '../utils/validation';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
-import { PROJECT_NAMES } from '../constants/projects';
+import { useProjects } from '../hooks/useProjects';
 
 interface TicketsTableProps {
   tickets: Ticket[];
@@ -51,11 +51,13 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   onRefresh,
   onCreateNew,
 }) => {
+  // Use projects hook to get dynamic project names
+  const { projects } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
-  const [sortField, setSortField] = useState<SortField>('id');
+  const [sortField, setSortField] = useState<SortField>('receivedDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showFilters, setShowFilters] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -90,15 +92,15 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     };
   }, []);
 
-  // Get unique projects for filter dropdown - combine predefined with any additional from tickets
+  // Get unique projects for filter dropdown - combine backend projects with any additional from tickets
   const uniqueProjects = React.useMemo(() => {
     const ticketProjects = Array.from(new Set(tickets.map(ticket => ticket.project)))
       .filter(project => project && project.trim().length > 0);
     
-    // Combine predefined projects with any additional projects from tickets
-    const allProjects = [...PROJECT_NAMES, ...ticketProjects];
+    // Combine backend projects with any additional projects from tickets
+    const allProjects = [...projects, ...ticketProjects];
     return Array.from(new Set(allProjects)).sort();
-  }, [tickets]);
+  }, [tickets, projects]);
 
   const filteredAndSortedTickets = React.useMemo(() => {
     let filtered = tickets;
@@ -111,7 +113,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         ticket.ticketOwner.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.messageId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getContributorName(ticket.contributor).toLowerCase().includes(searchTerm.toLowerCase())
+        getContributorDisplayValue(ticket).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -141,8 +143,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       } else if (sortField === 'contributor') {
-        aValue = getContributorName(a.contributor);
-        bValue = getContributorName(b.contributor);
+        aValue = getContributorDisplayValue(a);
+        bValue = getContributorDisplayValue(b);
       }
 
       if (typeof aValue === 'string') {
@@ -181,7 +183,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       'Received Date': ticket.receivedDate,
       'Priority': ticket.priority,
       'Ticket Owner': ticket.ticketOwner,
-      'Contributor': getContributorName(ticket.contributor),
+      'Contributor': getContributorDisplayValue(ticket),
       'Bug Type': ticket.bugType,
       'Status': ticket.status,
       'Review': ticket.review,
@@ -556,9 +558,35 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="max-w-xs">
-                          <p className="truncate" title={getContributorName(ticket.contributor)}>
-                            {getContributorName(ticket.contributor) || <span className="text-gray-400 italic">Not assigned</span>}
-                          </p>
+                          <div className="space-y-1">
+                            {ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {ticket.contributors.slice(0, 2).map((contributor, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
+                                    title={getContributorName(contributor)}
+                                  >
+                                    {truncateText(getContributorName(contributor), 15)}
+                                  </span>
+                                ))}
+                                {ticket.contributors.length > 2 && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                                    +{ticket.contributors.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            ) : ticket.contributor ? (
+                              <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
+                                title={getContributorName(ticket.contributor)}
+                              >
+                                {truncateText(getContributorName(ticket.contributor), 20)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic text-sm">Not assigned</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

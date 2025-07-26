@@ -1,4 +1,7 @@
-export const PROJECT_NAMES = [
+// ⚠️ DEPRECATED: These are fallback project names only.
+// Project names should now be fetched dynamically from the backend using useProjects() hook.
+// This constant is kept for backward compatibility and fallback scenarios only.
+export const FALLBACK_PROJECT_NAMES = [
   'Material reciept',
   'My buddy',
   'CK_Alumni',
@@ -14,4 +17,7 @@ export const PROJECT_NAMES = [
   'Mould Mamp'
 ] as const;
 
-export type ProjectName = typeof PROJECT_NAMES[number];
+// Legacy export for backward compatibility
+export const PROJECT_NAMES = FALLBACK_PROJECT_NAMES;
+
+export type ProjectName = string; // Now allows any string from backend

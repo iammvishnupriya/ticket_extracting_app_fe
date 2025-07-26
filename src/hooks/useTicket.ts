@@ -16,7 +16,7 @@ export interface UseTicketReturn {
   validationErrors: TicketValidationErrors | null;
 
   // Actions
-  processEmailText: (emailText: string) => Promise<void>;
+  processEmailText: (emailText: string) => Promise<Ticket>;
   saveTicket: (ticket: Ticket) => Promise<void>;
   updateTicket: (id: number, ticket: Partial<Ticket>) => Promise<void>;
   loadAllTickets: () => Promise<void>;

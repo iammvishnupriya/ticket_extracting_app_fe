@@ -23,27 +23,32 @@ export const ticketValidationSchema = z.object({
     .min(1, 'Ticket owner is required')
     .max(100, 'Ticket owner must be less than 100 characters'),
   
-  contributor: z.union([
-    z.string().max(500, 'Contributor must be less than 500 characters'),
-    z.object({
-      id: z.number(),
-      name: z.string(),
-      email: z.string(),
-      employeeId: z.string(),
-      department: z.string(),
-      phone: z.string().optional(),
-      active: z.boolean(),
-      notes: z.string().optional(),
-      createdAt: z.string(),
-      updatedAt: z.string()
-    })
-  ]).default(''),
+  contributor: z.string()
+    .max(500, 'Contributor must be less than 500 characters')
+    .optional()
+    .default(''),
+  
+  contributors: z.array(z.any())
+    .max(10, 'Maximum 10 contributors allowed')
+    .optional()
+    .default([]),
   
   contributorId: z.number().optional(),
   
+  contributorIds: z.array(z.number())
+    .max(10, 'Maximum 10 contributors allowed')
+    .optional()
+    .default([]),
+  
   contributorName: z.string()
     .max(500, 'Contributor name must be less than 500 characters')
-    .optional(),
+    .optional()
+    .default(''),
+  
+  contributorNames: z.array(z.string().max(500, 'Contributor name must be less than 500 characters'))
+    .max(10, 'Maximum 10 contributors allowed')
+    .optional()
+    .default([]),
   
   bugType: z.enum(['BUG', 'ENHANCEMENT', 'TASK'] as const),
   
@@ -51,22 +56,27 @@ export const ticketValidationSchema = z.object({
   
   review: z.string()
     .max(1000, 'Review must be less than 1000 characters')
+    .optional()
     .default(''),
   
   impact: z.string()
     .max(500, 'Impact must be less than 500 characters')
+    .optional()
     .default(''),
   
   contact: z.string()
     .max(100, 'Contact must be less than 100 characters')
+    .optional()
     .default(''),
   
   employeeId: z.string()
     .max(50, 'Employee ID must be less than 50 characters')
+    .optional()
     .default(''),
   
   employeeName: z.string()
     .max(100, 'Employee name must be less than 100 characters')
+    .optional()
     .default(''),
   
   messageId: z.string()
@@ -188,5 +198,27 @@ export const getContributorName = (contributor: string | any): string => {
   if (!contributor) return '';
   if (typeof contributor === 'string') return contributor;
   if (typeof contributor === 'object' && contributor.name) return contributor.name;
+  return '';
+};
+
+export const getContributorNames = (contributors: (string | any)[] | undefined): string[] => {
+  if (!contributors || !Array.isArray(contributors)) return [];
+  return contributors.map(contributor => getContributorName(contributor)).filter(name => name !== '');
+};
+
+export const getContributorNamesString = (contributors: (string | any)[] | undefined): string => {
+  const names = getContributorNames(contributors);
+  return names.join(', ');
+};
+
+export const getContributorDisplayValue = (ticket: any): string => {
+  // First try the new contributors array
+  if (ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0) {
+    return getContributorNamesString(ticket.contributors);
+  }
+  // Fall back to legacy single contributor
+  if (ticket.contributor) {
+    return getContributorName(ticket.contributor);
+  }
   return '';
 };

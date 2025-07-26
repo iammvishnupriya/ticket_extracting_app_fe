@@ -14,27 +14,22 @@ import {
   Mail,
   Phone,
   Building,
-  Hash,
   Save,
   X,
   AlertCircle,
   CheckCircle,
   RefreshCw,
-  MoreHorizontal,
   Eye,
   Copy,
   BarChart3,
-  Settings,
   FileText,
   Archive,
-  UserPlus,
   CheckSquare,
   Square,
-  Trash,
-  RotateCcw
+  Trash
 } from 'lucide-react';
 import { contributorService } from '../services/contributorService';
-import type { Contributor, ContributorRequest, Department } from '../types/contributor';
+import type { Contributor, ContributorRequest } from '../types/contributor';
 import { DEPARTMENT_OPTIONS } from '../types/contributor';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
@@ -84,7 +79,6 @@ export const ContributorsManagement: React.FC<ContributorsManagementProps> = ({ 
     handleSubmit,
     reset,
     formState: { errors },
-    watch,
     setError,
     clearErrors
   } = useForm<ContributorFormData>({
@@ -428,7 +422,7 @@ export const ContributorsManagement: React.FC<ContributorsManagementProps> = ({ 
     try {
       await navigator.clipboard.writeText(text);
       toast.success('Copied to clipboard');
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy to clipboard');
     }
   };

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { contributorService } from '../services/contributorService';
 import type { Contributor, ContributorOption } from '../types/contributor';
-import toast from 'react-hot-toast';
 
 export const useContributors = () => {
   const [contributors, setContributors] = useState<Contributor[]>([]);

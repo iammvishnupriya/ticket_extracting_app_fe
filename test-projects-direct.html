@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Projects API</title>
+</head>
+<body>
+    <h1>Testing Projects API</h1>
+    <div id="results"></div>
+    
+    <script>
+        console.log('🔍 Testing projects API from browser...');
+        const results = document.getElementById('results');
+        
+        // Test 1: Direct API call
+        console.log('🔍 Test 1: Direct API call to backend');
+        fetch('http://localhost:5143/api/projects')
+            .then(response => {
+                console.log('✅ Direct API Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Direct API Projects:', data);
+                results.innerHTML += '<h3>Direct API (Backend): SUCCESS</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                console.error('❌ Direct API Error:', error);
+                results.innerHTML += '<h3>Direct API (Backend): ERROR</h3><pre>' + error.message + '</pre>';
+            });
+        
+        // Test 2: Proxy API call (how frontend should work)
+        console.log('🔍 Test 2: Proxy API call through Vite');
+        fetch('/api/projects')
+            .then(response => {
+                console.log('✅ Proxy API Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Proxy API Projects:', data);
+                results.innerHTML += '<h3>Proxy API (Frontend): SUCCESS</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                console.error('❌ Proxy API Error:', error);
+                results.innerHTML += '<h3>Proxy API (Frontend): ERROR</h3><pre>' + error.message + '</pre>';
+            });
+    </script>
+</body>
+</html>

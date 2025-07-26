@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
@@ -24,23 +24,13 @@ import {
   STATUS_OPTIONS
 } from '../types/ticket';
 import type { 
-  Ticket, 
-  Priority, 
-  BugType, 
-  Status 
+  Ticket
 } from '../types/ticket';
-import { PROJECT_NAMES } from '../constants/projects';
-
-// Convert project names to options for SelectField
-const PROJECT_OPTIONS = PROJECT_NAMES.map(project => ({
-  value: project,
-  label: project,
-  color: '#6b7280' // Default gray color for projects
-}));
+import { useProjects } from '../hooks/useProjects';
 
 // Import contributor hook
 import { useContributors } from '../hooks/useContributors';
-import type { ContributorOption } from '../types/contributor';
+import { MultiContributorField } from './MultiContributorField';
 
 import { ticketValidationSchema } from '../utils/validation';
 import { getCharacterCount, isCharacterLimitExceeded, generateMessageId, getContributorName } from '../utils/validation';
@@ -64,16 +54,24 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   onBack,
   isSaving,
 }) => {
+  // Use projects hook
+  const { projects } = useProjects();
+  
+  // Convert project names to options for SelectField
+  const PROJECT_OPTIONS = projects.map(project => ({
+    value: project,
+    label: project,
+    color: '#6b7280' // Default gray color for projects
+  }));
+
   // Use contributors hook
-  const { activeContributors, getContributorOptions, findContributorById, findContributorByName, isLoading: contributorsLoading } = useContributors();
+  const { findContributorByName } = useContributors();
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors, isValid },
-    setValue,
     reset,
-  } = useForm<TicketFormData>({
+  } = useForm<any>({
     resolver: zodResolver(ticketValidationSchema),
     defaultValues: {
       ticketSummary: ticket.ticketSummary || '',
@@ -82,7 +80,11 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       receivedDate: ticket.receivedDate || '',
       priority: ticket.priority || 'LOW',
       ticketOwner: ticket.ticketOwner || '',
-      contributor: getContributorName(ticket.contributor),
+      contributor: getContributorName(ticket.contributor) || '',
+      contributors: ticket.contributors && Array.isArray(ticket.contributors) ? ticket.contributors : 
+        (ticket.contributor ? [ticket.contributor] : []),
+      contributorIds: ticket.contributorIds || [],
+      contributorNames: ticket.contributorNames || [],
       bugType: ticket.bugType || 'BUG',
       status: ticket.status || 'NEW',
       review: ticket.review || '',
@@ -92,7 +94,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       employeeName: ticket.employeeName || '',
       messageId: ticket.messageId || generateMessageId(),
     },
-    mode: 'onChange',
+    mode: 'onBlur',
   });
 
   console.log('TicketEditor rendered with isSaving:', isSaving);
@@ -108,6 +110,10 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       priority: ticket.priority || 'LOW',
       ticketOwner: ticket.ticketOwner || '',
       contributor: getContributorName(ticket.contributor),
+      contributors: ticket.contributors && Array.isArray(ticket.contributors) ? ticket.contributors : 
+        (ticket.contributor ? [ticket.contributor] : []),
+      contributorIds: ticket.contributorIds || [],
+      contributorNames: ticket.contributorNames || [],
       bugType: ticket.bugType || 'BUG',
       status: ticket.status || 'NEW',
       review: ticket.review || '',
@@ -120,37 +126,77 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   }, [ticket, reset]);
 
   // Simple function to get character count for a field
-  const getFieldCharacterCount = (fieldName: keyof TicketFormData) => {
-    const value = watch(fieldName);
-    return typeof value === 'string' ? value.length : 0;
-  };
+
 
   const handleFormSubmit = async (data: TicketFormData) => {
     try {
       console.log('TicketEditor - Submitting ticket data:', data);
       
-      // Convert TicketFormData to Ticket and handle contributor field properly
+      // Convert TicketFormData to Ticket and handle contributor fields properly
       const ticketData: Ticket = {
         ...data,
         id: ticket.id
       };
 
-      // Handle contributor field based on the form data
-      if (data.contributor) {
-        // If contributor is a string (name), try to find the corresponding contributor object
-        if (typeof data.contributor === 'string') {
-          const foundContributor = findContributorByName(data.contributor);
-          if (foundContributor) {
-            // Use the full contributor object and set contributorId
-            ticketData.contributor = foundContributor;
-            ticketData.contributorId = foundContributor.id;
-            ticketData.contributorName = foundContributor.name;
-          } else {
-            // Keep it as a string (contributorName for the API)
-            ticketData.contributor = data.contributor;
-            ticketData.contributorName = data.contributor;
-            // Don't set contributorId if contributor not found in database
-            delete ticketData.contributorId;
+      // Process multiple contributors
+      if (data.contributors && Array.isArray(data.contributors) && data.contributors.length > 0) {
+        const contributorIds: number[] = [];
+        const contributorNames: string[] = [];
+        const processedContributors: (string | any)[] = [];
+
+        data.contributors.forEach(contributor => {
+          if (typeof contributor === 'string') {
+            // Try to find contributor by name in database
+            const foundContributor = findContributorByName(contributor);
+            if (foundContributor) {
+              contributorIds.push(foundContributor.id);
+              contributorNames.push(foundContributor.name);
+              processedContributors.push(foundContributor);
+            } else {
+              contributorNames.push(contributor);
+              processedContributors.push(contributor);
+            }
+          } else if (contributor && typeof contributor === 'object' && contributor.id) {
+            contributorIds.push(contributor.id);
+            contributorNames.push(contributor.name);
+            processedContributors.push(contributor);
+          }
+        });
+
+        ticketData.contributors = processedContributors;
+        ticketData.contributorIds = contributorIds;
+        ticketData.contributorNames = contributorNames;
+
+        // For backward compatibility, set the first contributor as the primary one
+        if (processedContributors.length > 0) {
+          ticketData.contributor = processedContributors[0];
+          if (contributorIds.length > 0) {
+            ticketData.contributorId = contributorIds[0];
+          }
+          if (contributorNames.length > 0) {
+            ticketData.contributorName = contributorNames[0];
+          }
+        }
+      } else {
+        // Handle legacy single contributor field if no contributors array
+        if (data.contributor) {
+          if (typeof data.contributor === 'string') {
+            const foundContributor = findContributorByName(data.contributor);
+            if (foundContributor) {
+              ticketData.contributor = foundContributor;
+              ticketData.contributorId = foundContributor.id;
+              ticketData.contributorName = foundContributor.name;
+              // Also populate the new arrays for consistency
+              ticketData.contributors = [foundContributor];
+              ticketData.contributorIds = [foundContributor.id];
+              ticketData.contributorNames = [foundContributor.name];
+            } else {
+              ticketData.contributor = data.contributor;
+              ticketData.contributorName = data.contributor;
+              ticketData.contributors = [data.contributor];
+              ticketData.contributorNames = [data.contributor];
+              delete ticketData.contributorId;
+            }
           }
         }
       }
@@ -158,9 +204,11 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       console.log('TicketEditor - Final ticket data being sent to onSave:', {
         id: ticketData.id,
         contributor: ticketData.contributor,
+        contributors: ticketData.contributors,
         contributorId: ticketData.contributorId,
+        contributorIds: ticketData.contributorIds,
         contributorName: ticketData.contributorName,
-        contributorType: typeof ticketData.contributor,
+        contributorNames: ticketData.contributorNames,
         allFields: Object.keys(ticketData)
       });
       
@@ -255,7 +303,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       {errors[name] && (
         <p className="text-sm text-red-600 flex items-center gap-1">
           <AlertCircle className="w-4 h-4" />
-          {errors[name]?.message}
+          {String(errors[name]?.message || 'Invalid input')}
         </p>
       )}
     </div>
@@ -300,106 +348,13 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       {errors[name] && (
         <p className="text-sm text-red-600 flex items-center gap-1">
           <AlertCircle className="w-4 h-4" />
-          {errors[name]?.message}
+          {String(errors[name]?.message || 'Invalid input')}
         </p>
       )}
     </div>
   ), [control, errors, isSaving]);
 
-  const ContributorField: React.FC<{
-    name: keyof TicketFormData;
-    label: string;
-    icon?: React.ReactNode;
-    required?: boolean;
-  }> = ({ name, label, icon, required = false }) => {
-    const watchedValue = watch(name);
-    const contributorOptions = getContributorOptions();
-    const [showCustomInput, setShowCustomInput] = useState(false);
-    
-    // Check if current value is a custom contributor (not in database)
-    const isCustomContributor = watchedValue && !contributorOptions.some(option => option.label === watchedValue);
-    
-    // Initialize custom input state
-    React.useEffect(() => {
-      setShowCustomInput(isCustomContributor);
-    }, [isCustomContributor]);
-    
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          {icon}
-          <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-        </div>
-        
-        <Controller
-          name={name}
-          control={control}
-          render={({ field }) => (
-            <div className="space-y-2">
-              {contributorsLoading ? (
-                <div className="input-field flex items-center justify-center py-2">
-                  <div className="animate-spin w-4 h-4 border-2 border-gray-300 border-t-primary-600 rounded-full mr-2"></div>
-                  Loading contributors...
-                </div>
-              ) : (
-                <>
-                  <select
-                    value={showCustomInput ? 'custom' : (field.value || '')}
-                    onChange={(e) => {
-                      if (e.target.value === 'custom') {
-                        setShowCustomInput(true);
-                        // Keep current value if it's already custom
-                        if (!isCustomContributor) {
-                          field.onChange('');
-                        }
-                      } else {
-                        setShowCustomInput(false);
-                        field.onChange(e.target.value);
-                      }
-                    }}
-                    className={`input-field ${
-                      errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                    }`}
-                    disabled={isSaving}
-                  >
-                    <option value="">Select contributor</option>
-                    {contributorOptions.map((option) => (
-                      <option key={option.value} value={option.label}>
-                        {option.label} {option.department && `(${option.department})`}
-                      </option>
-                    ))}
-                    <option value="custom">Other (Custom)</option>
-                  </select>
-                  
-                  {showCustomInput && (
-                    <input
-                      type="text"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      placeholder="Enter contributor name"
-                      className={`input-field ${
-                        errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                      }`}
-                      disabled={isSaving}
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        />
-        
-        {errors[name] && (
-          <p className="text-sm text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
-            {errors[name]?.message}
-          </p>
-        )}
-      </div>
-    );
-  };
+
 
   return (
     <div className="card animate-slide-up hover-lift">
@@ -429,153 +384,162 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       </div>
 
       <div className="card-body">
-        {/* Debug: Show validation errors */}
-        {process.env.NODE_ENV === 'development' && Object.keys(errors).length > 0 && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <h4 className="text-sm font-medium text-red-800 mb-2">Form Validation Errors:</h4>
-            <ul className="text-xs text-red-700 space-y-1">
-              {Object.entries(errors).map(([field, error]) => (
-                <li key={field}>
-                  <strong>{field}:</strong> {error?.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
           {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Basic Information
-            </h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Basic Information
+              </h3>
+              
               <FormField
                 name="ticketSummary"
                 label="Ticket Summary"
                 placeholder="Brief summary of the ticket"
-                maxLength={500}
+                maxLength={200}
                 required
-                icon={<FileText className="w-4 h-4 text-gray-600" />}
+                icon={<FileText className="w-4 h-4 text-gray-500" />}
               />
               
               <SelectField
                 name="project"
                 label="Project"
                 options={PROJECT_OPTIONS}
+                icon={<Tag className="w-4 h-4 text-gray-500" />}
                 required
-                icon={<Tag className="w-4 h-4 text-gray-600" />}
               />
+              
+              <FormField
+                name="issueDescription"
+                label="Issue Description"
+                placeholder="Detailed description of the issue"
+                maxLength={1000}
+                required
+                icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
+                isTextarea
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Ticket Details
+              </h3>
               
               <FormField
                 name="receivedDate"
                 label="Received Date"
                 type="date"
                 required
-                icon={<Calendar className="w-4 h-4 text-gray-600" />}
+                icon={<Calendar className="w-4 h-4 text-gray-500" />}
               />
               
-              <FormField
-                name="messageId"
-                label="Message ID"
-                placeholder="Unique message identifier"
-                required
-                icon={<Hash className="w-4 h-4 text-gray-600" />}
-              />
-            </div>
-          </div>
-
-          {/* Status & Priority */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Status & Priority
-            </h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <SelectField
                 name="priority"
                 label="Priority"
                 options={PRIORITY_OPTIONS}
+                icon={<Flag className="w-4 h-4 text-gray-500" />}
                 required
-                icon={<Flag className="w-4 h-4 text-gray-600" />}
               />
               
-              <SelectField
-                name="bugType"
-                label="Bug Type"
-                options={BUG_TYPE_OPTIONS}
-                required
-                icon={<Settings className="w-4 h-4 text-gray-600" />}
-              />
-              
-              <SelectField
-                name="status"
-                label="Status"
-                options={STATUS_OPTIONS}
-                required
-                icon={<Clock className="w-4 h-4 text-gray-600" />}
-              />
-            </div>
-          </div>
-
-          {/* Assignment & Impact */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Assignment & Impact
-            </h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <FormField
                 name="ticketOwner"
                 label="Ticket Owner"
                 placeholder="Person responsible for the ticket"
                 maxLength={100}
                 required
-                icon={<User className="w-4 h-4 text-gray-600" />}
+                icon={<User className="w-4 h-4 text-gray-500" />}
               />
               
-              <ContributorField
-                name="contributor"
-                label="Contributor"
-                icon={<User className="w-4 h-4 text-gray-600" />}
+              <SelectField
+                name="bugType"
+                label="Bug Type"
+                options={BUG_TYPE_OPTIONS}
+                icon={<Tag className="w-4 h-4 text-gray-500" />}
+                required
+              />
+              
+              <SelectField
+                name="status"
+                label="Status"
+                options={STATUS_OPTIONS}
+                icon={<Clock className="w-4 h-4 text-gray-500" />}
+                required
               />
             </div>
+          </div>
+
+          {/* Contributors Section */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Contributors
+            </h3>
             
-            <FormField
-              name="impact"
-              label="Impact"
-              placeholder="Impact description"
-              maxLength={500}
-              icon={<Target className="w-4 h-4 text-gray-600" />}
-              isTextarea
-              rows={3}
+            <Controller
+              name="contributors"
+              control={control}
+              render={({ field }) => (
+                <div className="space-y-2">
+                  <MultiContributorField
+                    contributors={field.value || []}
+                    onChange={field.onChange}
+                    disabled={isSaving}
+                  />
+                  {errors.contributors && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {String(errors.contributors?.message || 'Invalid contributors')}
+                    </p>
+                  )}
+                </div>
+              )}
             />
           </div>
 
-          {/* Technical Details */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Technical Details
-            </h3>
-            
-            <FormField
-              name="review"
-              label="Review"
-              placeholder="Review comments and notes"
-              maxLength={1000}
-              icon={<MessageSquare className="w-4 h-4 text-gray-600" />}
-              isTextarea
-              rows={4}
-            />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Additional Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Impact & Review
+              </h3>
+              
+              <FormField
+                name="impact"
+                label="Impact"
+                placeholder="Impact description"
+                maxLength={500}
+                icon={<Target className="w-4 h-4 text-gray-500" />}
+                isTextarea
+                rows={3}
+              />
+              
+              <FormField
+                name="review"
+                label="Review"
+                placeholder="Review notes"
+                maxLength={500}
+                icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
+                isTextarea
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                <Phone className="w-5 h-5" />
+                Contact Information
+              </h3>
+              
               <FormField
                 name="contact"
                 label="Contact"
                 placeholder="Contact information"
-                maxLength={100}
-                icon={<Phone className="w-4 h-4 text-gray-600" />}
+                maxLength={200}
+                icon={<Phone className="w-4 h-4 text-gray-500" />}
               />
               
               <FormField
@@ -583,7 +547,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
                 label="Employee ID"
                 placeholder="Employee ID"
                 maxLength={50}
-                icon={<Hash className="w-4 h-4 text-gray-600" />}
+                icon={<Hash className="w-4 h-4 text-gray-500" />}
               />
               
               <FormField
@@ -591,72 +555,62 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
                 label="Employee Name"
                 placeholder="Employee name"
                 maxLength={100}
-                icon={<User className="w-4 h-4 text-gray-600" />}
+                icon={<User className="w-4 h-4 text-gray-500" />}
+              />
+              
+              <FormField
+                name="messageId"
+                label="Message ID"
+                placeholder="Message ID (auto-generated)"
+                maxLength={100}
+                icon={<Hash className="w-4 h-4 text-gray-500" />}
               />
             </div>
           </div>
 
-          {/* Detailed Information */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Detailed Information
-            </h3>
-            
-            <FormField
-              name="issueDescription"
-              label="Issue Description"
-              placeholder="Detailed description of the issue"
-              maxLength={2000}
-              required
-              icon={<AlertCircle className="w-4 h-4 text-gray-600" />}
-              isTextarea
-              rows={6}
-            />
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex items-center justify-between pt-6 border-t">
-            <div className="flex items-center gap-3">
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-8 border-t border-gray-200">
+            <div className="flex gap-4">
               {onBack && (
                 <button
                   type="button"
                   onClick={onBack}
+                  className="btn-secondary flex items-center gap-2"
                   disabled={isSaving}
-                  className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Table
+                  Back
                 </button>
               )}
-            </div>
-            <div className="flex items-center gap-3">
+              
               <button
                 type="button"
                 onClick={onCancel}
+                className="btn-secondary flex items-center gap-2"
                 disabled={isSaving}
-                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <X className="w-4 h-4" />
                 Cancel
               </button>
-            
-              <button
-                type="submit"
-                disabled={isSaving || !isValid}
-                className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Save Ticket
-                  </>
-                )}
-              </button>
             </div>
+            
+            <button
+              type="submit"
+              className="btn-primary flex items-center gap-2"
+              disabled={isSaving || !isValid}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Ticket
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>

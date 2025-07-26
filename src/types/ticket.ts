@@ -6,8 +6,8 @@ export interface Contributor {
   id: number;
   name: string;
   email: string;
-  employeeId: string;
-  department: string;
+  employeeId?: string;
+  department?: string;
   phone?: string;
   active: boolean;
   notes?: string;
@@ -23,9 +23,12 @@ export interface Ticket {
   receivedDate: string;
   priority: Priority;
   ticketOwner: string;
-  contributor: string | Contributor; // Can be either string or Contributor object
-  contributorId?: number; // ID of existing contributor
-  contributorName?: string; // Name of contributor (fallback option)
+  contributor: string | Contributor; // Legacy field - kept for backward compatibility
+  contributors?: (string | Contributor)[]; // New field for multiple contributors
+  contributorId?: number; // Legacy ID of existing contributor
+  contributorIds?: number[]; // New field for multiple contributor IDs
+  contributorName?: string; // Legacy name of contributor (fallback option)
+  contributorNames?: string[]; // New field for multiple contributor names
   bugType: BugType;
   status: Status;
   review: string;

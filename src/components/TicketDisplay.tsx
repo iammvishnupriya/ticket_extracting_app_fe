@@ -9,8 +9,7 @@ import {
   AlertCircle,
   FileText,
   Clock,
-  Mail,
-  Phone,
+
   Tag,
   Flag,
   Settings,
@@ -22,7 +21,7 @@ import {
 } from 'lucide-react';
 import { PRIORITY_OPTIONS, BUG_TYPE_OPTIONS, STATUS_OPTIONS } from '../types/ticket';
 import type { Ticket as TicketType } from '../types/ticket';
-import { formatDate, copyToClipboard, downloadAsJSON, truncateText, getContributorName } from '../utils/validation';
+import { formatDate, copyToClipboard, downloadAsJSON, truncateText, getContributorName, getContributorDisplayValue } from '../utils/validation';
 import toast from 'react-hot-toast';
 
 interface TicketDisplayProps {
@@ -270,13 +269,72 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
               fieldKey="ticketOwner"
             />
             
-            <FieldRow
-              icon={<User className="w-4 h-4 text-gray-600" />}
-              label="Contributor"
-              value={getContributorName(ticket.contributor)}
-              fieldKey="contributor"
-              maxLength={100}
-            />
+            {/* Contributors Section */}
+            <div className="flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors rounded-lg">
+              <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mt-1">
+                <User className="w-4 h-4 text-gray-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-medium text-gray-900">Contributors</h3>
+                </div>
+                <div className="space-y-2">
+                  {/* Multiple Contributors Display */}
+                  {ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {ticket.contributors.map((contributor, index) => (
+                          <div
+                            key={index}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                          >
+                            <User className="w-3 h-3" />
+                            <span>{getContributorName(contributor)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <p className="text-sm text-gray-700 flex-1">
+                          {getContributorDisplayValue(ticket)}
+                        </p>
+                        <button
+                          onClick={() => handleCopyField('Contributors', getContributorDisplayValue(ticket))}
+                          className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                          title="Copy contributors"
+                        >
+                          {copiedField === 'contributors' ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  ) : ticket.contributor ? (
+                    /* Legacy Single Contributor Display */
+                    <div className="flex items-start gap-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm mb-2">
+                        <User className="w-3 h-3" />
+                        <span>{getContributorName(ticket.contributor)}</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyField('Contributor', getContributorName(ticket.contributor))}
+                        className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                        title="Copy contributor"
+                      >
+                        {copiedField === 'contributor' ? (
+                          <Check className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">No contributors assigned</p>
+                  )}
+                </div>
+              </div>
+            </div>
             
             <FieldRow
               icon={<Target className="w-4 h-4 text-gray-600" />}
