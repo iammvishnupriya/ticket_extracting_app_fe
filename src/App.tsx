@@ -242,11 +242,8 @@ function App() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gradient">
-                  Ticket Email Extraction
+                  Ticketing & Reporting System
                 </h1>
-                <p className="text-sm text-secondary-600 font-medium">
-                  Extract and manage ticket information from emails
-                </p>
               </div>
             </div>
 
@@ -475,12 +472,10 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              © 2025 Ticket Email Extraction System. Built with React + TypeScript + Vite.
+              © 2025 Ticket Report System.
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span>Backend: localhost:5143</span>
-              <span>•</span>
-              <span>Frontend: {window.location.origin}</span>
+              
             </div>
           </div>
         </div>
