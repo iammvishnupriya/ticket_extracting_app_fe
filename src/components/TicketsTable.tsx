@@ -486,157 +486,166 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="id">ID</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="ticketSummary">Summary</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <SortButton field="project">Project</SortButton>
-                      {projectFilter && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                          Filtered
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="status">Status</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="priority">Priority</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="ticketOwner">Owner</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="contributor">Contributor</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <SortButton field="receivedDate">Date</SortButton>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedTickets.map((ticket) => {
-                  const priorityOption = getPriorityOption(ticket.priority);
-                  const statusOption = getStatusOption(ticket.status);
-                  
-                  return (
-                    <tr key={ticket.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{ticket.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="max-w-xs">
-                          <p className="truncate" title={ticket.ticketSummary}>
-                            {truncateText(ticket.ticketSummary, 50)}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ticket.project}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`badge ${statusOption.color}`}>
-                          {statusOption.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`badge ${priorityOption.color}`}>
-                          {priorityOption.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ticket.ticketOwner}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="max-w-xs">
-                          <div className="space-y-1">
-                            {ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {ticket.contributors.slice(0, 2).map((contributor, index) => (
-                                  <span
-                                    key={index}
-                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
-                                    title={getContributorName(contributor)}
-                                  >
-                                    {truncateText(getContributorName(contributor), 15)}
-                                  </span>
-                                ))}
-                                {ticket.contributors.length > 2 && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
-                                    +{ticket.contributors.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            ) : ticket.contributor ? (
-                              <span
-                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
-                                title={getContributorName(ticket.contributor)}
-                              >
-                                {truncateText(getContributorName(ticket.contributor), 20)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 italic text-sm">Not assigned</span>
-                            )}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            {/* Fixed Table Header */}
+            <div className="overflow-x-auto bg-gray-50 border-b border-gray-200">
+              <table className="min-w-full">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                      <SortButton field="id">ID</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+                      <SortButton field="ticketSummary">Summary</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                      <div className="flex items-center gap-2">
+                        <SortButton field="project">Project</SortButton>
+                        {projectFilter && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                            Filtered
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                      <SortButton field="status">Status</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                      <SortButton field="priority">Priority</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                      <SortButton field="ticketOwner">Owner</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                      <SortButton field="contributor">Contributor</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                      <SortButton field="receivedDate">Date</SortButton>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+            
+            {/* Scrollable Table Body */}
+            <div className="overflow-auto max-h-[60vh] bg-white">
+              <table className="min-w-full">
+                <tbody className="divide-y divide-gray-200">
+                  {filteredAndSortedTickets.map((ticket) => {
+                    const priorityOption = getPriorityOption(ticket.priority);
+                    const statusOption = getStatusOption(ticket.status);
+                    
+                    return (
+                      <tr key={ticket.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 w-20">
+                          #{ticket.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[200px]">
+                          <div className="max-w-xs">
+                            <p className="truncate" title={ticket.ticketSummary}>
+                              {truncateText(ticket.ticketSummary, 50)}
+                            </p>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(ticket.receivedDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex items-center gap-2">
-                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('View button clicked for ticket:', ticket.id);
-                              onView(ticket);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
-                            title="View ticket"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Edit button clicked for ticket:', ticket.id);
-                              onEdit(ticket);
-                            }}
-                            className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
-                            title="Edit ticket"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Delete button clicked for ticket:', ticket.id);
-                              handleDeleteConfirm(ticket.id!, ticket.ticketSummary);
-                            }}
-                            className="text-red-600 hover:text-red-800 transition-colors p-1 hover:bg-red-50 rounded"
-                            title="Delete ticket"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[120px]">
+                          {ticket.project}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap w-24">
+                          <span className={`badge ${statusOption.color}`}>
+                            {statusOption.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap w-24">
+                          <span className={`badge ${priorityOption.color}`}>
+                            {priorityOption.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[120px]">
+                          {ticket.ticketOwner}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[150px]">
+                          <div className="max-w-xs">
+                            <div className="space-y-1">
+                              {ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {ticket.contributors.slice(0, 2).map((contributor, index) => (
+                                    <span
+                                      key={index}
+                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
+                                      title={getContributorName(contributor)}
+                                    >
+                                      {truncateText(getContributorName(contributor), 15)}
+                                    </span>
+                                  ))}
+                                  {ticket.contributors.length > 2 && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                                      +{ticket.contributors.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              ) : ticket.contributor ? (
+                                <span
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
+                                  title={getContributorName(ticket.contributor)}
+                                >
+                                  {truncateText(getContributorName(ticket.contributor), 20)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 italic text-sm">Not assigned</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 w-28">
+                          {formatDate(ticket.receivedDate)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
+                          <div className="flex items-center gap-2">
+                             <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('View button clicked for ticket:', ticket.id);
+                                onView(ticket);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
+                              title="View ticket"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Edit button clicked for ticket:', ticket.id);
+                                onEdit(ticket);
+                              }}
+                              className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
+                              title="Edit ticket"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Delete button clicked for ticket:', ticket.id);
+                                handleDeleteConfirm(ticket.id!, ticket.ticketSummary);
+                              }}
+                              className="text-red-600 hover:text-red-800 transition-colors p-1 hover:bg-red-50 rounded"
+                              title="Delete ticket"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
