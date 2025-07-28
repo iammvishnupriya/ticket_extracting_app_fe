@@ -174,34 +174,27 @@ export const ticketService = {
       // Ensure id is included in the request body
       ticketData.id = id;
       
-      // Handle contributors with a backend-safe approach
+      // Handle contributors with the new backend structure
       if (ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0) {
-        // Process multiple contributors but send in a way backend can handle
+        // Process multiple contributors for the new backend format
         const contributorIds: number[] = [];
-        const contributorNames: string[] = [];
         
         ticket.contributors.forEach(contributor => {
-          if (typeof contributor === 'string') {
-            contributorNames.push(contributor);
-          } else if (contributor && typeof contributor === 'object' && contributor.id) {
+          if (contributor && typeof contributor === 'object' && contributor.id) {
             contributorIds.push(contributor.id);
-            contributorNames.push(contributor.name);
           }
         });
         
-        // Send arrays as comma-separated strings to avoid serialization issues
+        // Use the new contributorIdsList field (recommended by backend)
         if (contributorIds.length > 0) {
+          ticketData.contributorIdsList = contributorIds;
+          // Also send the string format for backward compatibility
           ticketData.contributorIds = contributorIds.join(',');
-        }
-        if (contributorNames.length > 0) {
-          ticketData.contributorNames = contributorNames.join(',');
         }
         
         // For backward compatibility, set first contributor as primary
         const firstContributor = ticket.contributors[0];
-        if (typeof firstContributor === 'string') {
-          ticketData.contributorName = firstContributor;
-        } else if (firstContributor && typeof firstContributor === 'object') {
+        if (firstContributor && typeof firstContributor === 'object') {
           if (firstContributor.id) {
             ticketData.contributorId = firstContributor.id;
           }

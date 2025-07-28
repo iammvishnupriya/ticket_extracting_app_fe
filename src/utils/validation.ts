@@ -45,8 +45,10 @@ export const ticketValidationSchema = z.object({
     .optional()
     .default(''),
   
-  contributorNames: z.array(z.string().max(500, 'Contributor name must be less than 500 characters'))
-    .max(10, 'Maximum 10 contributors allowed')
+  contributorNames: z.union([
+    z.array(z.string().max(500, 'Contributor name must be less than 500 characters')).max(10, 'Maximum 10 contributors allowed'),
+    z.string().max(1000, 'Contributor names must be less than 1000 characters')
+  ])
     .optional()
     .default([]),
   
@@ -217,13 +219,20 @@ export const getContributorDisplayValue = (ticket: any): string => {
   // Handle null/undefined ticket
   if (!ticket) return '';
   
-  // First try the new contributors array
+  // NEW: First try the backend's contributorNames field (comma-separated string)
+  if (ticket.contributorNames && typeof ticket.contributorNames === 'string') {
+    return ticket.contributorNames;
+  }
+  
+  // Then try the new contributors array
   if (ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0) {
     return getContributorNamesString(ticket.contributors);
   }
+  
   // Fall back to legacy single contributor
   if (ticket.contributor) {
     return getContributorName(ticket.contributor);
   }
+  
   return '';
 };

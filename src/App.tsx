@@ -8,6 +8,7 @@ import { TicketEditor } from './components/TicketEditor';
 import { TicketsTable } from './components/TicketsTable';
 import { ConsolidateTable } from './components/ConsolidateTable';
 import { ContributorsManagement } from './components/ContributorsManagement';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { useTicket } from './hooks/useTicket';
 import type { Ticket } from './types/ticket';
@@ -127,6 +128,7 @@ function App() {
 
   const handleEditTicket = () => {
     console.log('handleEditTicket called, resetting saving state');
+    clearError();
     resetSavingState();
     setCurrentView('edit');
   };
@@ -143,8 +145,8 @@ function App() {
     // Set the current ticket for editing
     console.log('handleEditFromTable called, resetting saving state');
     clearError();
-    setCurrentTicket(ticket);
     resetSavingState();
+    setCurrentTicket(ticket);
     setCurrentView('edit');
   };
 
@@ -396,13 +398,21 @@ function App() {
 
         {currentView === 'edit' && (
           currentTicket ? (
-            <TicketEditor
-              ticket={currentTicket}
-              onSave={handleSaveTicket}
-              onCancel={handleCancelEdit}
-              onBack={handleBackToTable}
-              isSaving={isSaving}
-            />
+            <ErrorBoundary
+              onError={(error, errorInfo) => {
+                console.error('TicketEditor Error:', error);
+                console.error('Error Info:', errorInfo);
+              }}
+            >
+              <TicketEditor
+                key={`ticket-editor-${currentTicket.id}-${currentView}`}
+                ticket={currentTicket}
+                onSave={handleSaveTicket}
+                onCancel={handleCancelEdit}
+                onBack={handleBackToTable}
+                isSaving={isSaving}
+              />
+            </ErrorBoundary>
           ) : (
             <div className="card animate-slide-up">
               <div className="card-body">

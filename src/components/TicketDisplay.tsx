@@ -295,10 +295,15 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
                       </div>
                       <div className="flex items-start gap-2">
                         <p className="text-sm text-gray-700 flex-1">
-                          {getContributorDisplayValue(ticket)}
+                          {ticket.contributorNames || getContributorDisplayValue(ticket)}
+                          {ticket.contributorCount && ticket.contributorCount > 1 && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({ticket.contributorCount} contributors)
+                            </span>
+                          )}
                         </p>
                         <button
-                          onClick={() => handleCopyField('Contributors', getContributorDisplayValue(ticket))}
+                          onClick={() => handleCopyField('Contributors', ticket.contributorNames || getContributorDisplayValue(ticket))}
                           className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                           title="Copy contributors"
                         >

@@ -115,7 +115,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
           (ticket.ticketOwner || '').toLowerCase().includes(searchTermLower) ||
           (ticket.employeeName || '').toLowerCase().includes(searchTermLower) ||
           (ticket.messageId || '').toLowerCase().includes(searchTermLower) ||
-          (getContributorDisplayValue(ticket) || '').toLowerCase().includes(searchTermLower)
+          (ticket.contributorNames || getContributorDisplayValue(ticket) || '').toLowerCase().includes(searchTermLower)
         );
       });
     }
@@ -146,8 +146,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       } else if (sortField === 'contributor') {
-        aValue = getContributorDisplayValue(a);
-        bValue = getContributorDisplayValue(b);
+        aValue = a.contributorNames || getContributorDisplayValue(a);
+        bValue = b.contributorNames || getContributorDisplayValue(b);
       }
 
       if (typeof aValue === 'string') {
@@ -186,7 +186,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       'Received Date': ticket.receivedDate,
       'Priority': ticket.priority,
       'Ticket Owner': ticket.ticketOwner,
-      'Contributor': getContributorDisplayValue(ticket),
+      'Contributor': ticket.contributorNames || getContributorDisplayValue(ticket),
       'Bug Type': ticket.bugType,
       'Status': ticket.status,
       'Review': ticket.review,
@@ -562,20 +562,35 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="max-w-xs">
                           <div className="space-y-1">
-                            {ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0 ? (
+                            {/* Display contributor names with count badge */}
+                            {ticket.contributorNames ? (
+                              <div className="flex items-center gap-2">
+                                <span 
+                                  className="text-sm text-gray-700 flex-1"
+                                  title={ticket.contributorNames}
+                                >
+                                  {truncateText(ticket.contributorNames, 30)}
+                                </span>
+                                {ticket.contributorCount && ticket.contributorCount > 1 && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-blue-500 text-white font-medium">
+                                    {ticket.contributorCount}
+                                  </span>
+                                )}
+                              </div>
+                            ) : ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
-                                {ticket.contributors.slice(0, 2).map((contributor, index) => (
+                                {ticket.contributors.slice(0, 3).map((contributor, index) => (
                                   <span
                                     key={index}
                                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
-                                    title={getContributorName(contributor)}
+                                    title={contributor.name || contributor.email}
                                   >
-                                    {truncateText(getContributorName(contributor), 15)}
+                                    {truncateText(contributor.name || contributor.email || 'Unknown', 15)}
                                   </span>
                                 ))}
-                                {ticket.contributors.length > 2 && (
+                                {ticket.contributors.length > 3 && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
-                                    +{ticket.contributors.length - 2} more
+                                    +{ticket.contributors.length - 3} more
                                   </span>
                                 )}
                               </div>

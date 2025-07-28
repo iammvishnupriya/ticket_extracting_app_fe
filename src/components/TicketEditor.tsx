@@ -54,75 +54,158 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   onBack,
   isSaving,
 }) => {
-  // Use projects hook
+  // Defensive check for required props
+  if (!ticket) {
+    console.error('TicketEditor: ticket prop is required');
+    return (
+      <div className="card animate-slide-up">
+        <div className="card-body">
+          <div className="text-center py-8">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-gray-600">Error: No ticket data provided</p>
+            <button onClick={onCancel} className="btn-secondary mt-4">
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Use projects hook with error handling
   const { projects } = useProjects();
   
-  // Convert project names to options for SelectField
-  const PROJECT_OPTIONS = projects.map(project => ({
+  // Convert project names to options for SelectField with safety check
+  const PROJECT_OPTIONS = Array.isArray(projects) ? projects.map(project => ({
     value: project,
     label: project,
     color: '#6b7280' // Default gray color for projects
-  }));
+  })) : [];
 
-  // Use contributors hook
+  // Use contributors hook with error handling
   const { findContributorByName } = useContributors();
+  // Create safe default values
+  const createDefaultValues = (ticketData: Ticket) => {
+    try {
+      return {
+        ticketSummary: ticketData?.ticketSummary || '',
+        project: ticketData?.project || '',
+        issueDescription: ticketData?.issueDescription || '',
+        receivedDate: ticketData?.receivedDate || '',
+        priority: ticketData?.priority || 'LOW',
+        ticketOwner: ticketData?.ticketOwner || '',
+        contributor: getContributorName(ticketData?.contributor) || '',
+        contributors: (ticketData?.contributors && Array.isArray(ticketData.contributors)) ? ticketData.contributors : 
+          (ticketData?.contributor ? [ticketData.contributor] : []),
+        contributorIds: Array.isArray(ticketData?.contributorIds) ? ticketData.contributorIds : [],
+        contributorNames: Array.isArray(ticketData?.contributorNames) ? ticketData.contributorNames : 
+          (typeof ticketData?.contributorNames === 'string' ? ticketData.contributorNames : []),
+        bugType: ticketData?.bugType || 'BUG',
+        status: ticketData?.status || 'NEW',
+        review: ticketData?.review || '',
+        impact: ticketData?.impact || '',
+        contact: ticketData?.contact || '',
+        employeeId: ticketData?.employeeId || '',
+        employeeName: ticketData?.employeeName || '',
+        messageId: ticketData?.messageId || generateMessageId(),
+      };
+    } catch (error) {
+      console.error('Error creating default values:', error);
+      // Return minimal safe defaults
+      return {
+        ticketSummary: '',
+        project: '',
+        issueDescription: '',
+        receivedDate: '',
+        priority: 'LOW' as const,
+        ticketOwner: '',
+        contributor: '',
+        contributors: [],
+        contributorIds: [],
+        contributorNames: [],
+        bugType: 'BUG' as const,
+        status: 'NEW' as const,
+        review: '',
+        impact: '',
+        contact: '',
+        employeeId: '',
+        employeeName: '',
+        messageId: generateMessageId(),
+      };
+    }
+  };
+
   const {
     control,
     handleSubmit,
     formState: { errors, isValid },
     reset,
+    watch,
   } = useForm<any>({
     resolver: zodResolver(ticketValidationSchema),
-    defaultValues: {
-      ticketSummary: ticket.ticketSummary || '',
-      project: ticket.project || '',
-      issueDescription: ticket.issueDescription || '',
-      receivedDate: ticket.receivedDate || '',
-      priority: ticket.priority || 'LOW',
-      ticketOwner: ticket.ticketOwner || '',
-      contributor: getContributorName(ticket.contributor) || '',
-      contributors: ticket.contributors && Array.isArray(ticket.contributors) ? ticket.contributors : 
-        (ticket.contributor ? [ticket.contributor] : []),
-      contributorIds: ticket.contributorIds || [],
-      contributorNames: ticket.contributorNames || [],
-      bugType: ticket.bugType || 'BUG',
-      status: ticket.status || 'NEW',
-      review: ticket.review || '',
-      impact: ticket.impact || '',
-      contact: ticket.contact || '',
-      employeeId: ticket.employeeId || '',
-      employeeName: ticket.employeeName || '',
-      messageId: ticket.messageId || generateMessageId(),
-    },
-    mode: 'onBlur',
+    defaultValues: createDefaultValues(ticket),
+    mode: 'onChange',
   });
 
   console.log('TicketEditor rendered with isSaving:', isSaving);
   console.log('Form validation state - isValid:', isValid, 'errors:', errors);
+  
+  // Debug: Log current form values to see what's being validated
+  const currentValues = watch();
+  console.log('Current form values:', currentValues);
+  
+  // Debug: Test manual validation
+  useEffect(() => {
+    if (currentValues && Object.keys(currentValues).length > 0) {
+      const validationResult = ticketValidationSchema.safeParse(currentValues);
+      console.log('Manual validation result:', validationResult);
+      if (!validationResult.success) {
+        console.log('Validation errors:', validationResult.error.issues);
+      }
+    }
+  }, [currentValues]);
+
+  // Reset form validation state when saving completes
+  useEffect(() => {
+    if (!isSaving) {
+      console.log('TicketEditor - isSaving changed to false, clearing form errors');
+      // Clear any form submission state that might be blocking the form
+      setTimeout(() => {
+        console.log('TicketEditor - Triggering form validation reset');
+      }, 100);
+    }
+  }, [isSaving]);
 
   // Reset form when ticket changes
   useEffect(() => {
-    reset({
-      ticketSummary: ticket.ticketSummary || '',
-      project: ticket.project || '',
-      issueDescription: ticket.issueDescription || '',
-      receivedDate: ticket.receivedDate || '',
-      priority: ticket.priority || 'LOW',
-      ticketOwner: ticket.ticketOwner || '',
-      contributor: getContributorName(ticket.contributor),
-      contributors: ticket.contributors && Array.isArray(ticket.contributors) ? ticket.contributors : 
-        (ticket.contributor ? [ticket.contributor] : []),
-      contributorIds: ticket.contributorIds || [],
-      contributorNames: ticket.contributorNames || [],
-      bugType: ticket.bugType || 'BUG',
-      status: ticket.status || 'NEW',
-      review: ticket.review || '',
-      impact: ticket.impact || '',
-      contact: ticket.contact || '',
-      employeeId: ticket.employeeId || '',
-      employeeName: ticket.employeeName || '',
-      messageId: ticket.messageId || generateMessageId(),
-    });
+    try {
+      console.log('TicketEditor - Resetting form with ticket:', ticket?.id, 'isSaving:', isSaving);
+      
+      if (!ticket) {
+        console.warn('TicketEditor - No ticket provided for form reset');
+        return;
+      }
+
+      const formData = createDefaultValues(ticket);
+      
+      reset(formData, { 
+        keepErrors: false, 
+        keepDirty: false, 
+        keepIsSubmitted: false,
+        keepTouched: false,
+        keepIsValid: false,
+        keepSubmitCount: false
+      });
+      
+      // Force validation after reset to ensure isValid is correct
+      setTimeout(() => {
+        console.log('TicketEditor - Triggering validation after reset');
+      }, 50);
+      
+      console.log('TicketEditor - Form reset completed');
+    } catch (error) {
+      console.error('TicketEditor - Error during form reset:', error);
+    }
   }, [ticket, reset]);
 
   // Simple function to get character count for a field
@@ -131,6 +214,14 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
   const handleFormSubmit = async (data: TicketFormData) => {
     try {
       console.log('TicketEditor - Submitting ticket data:', data);
+      
+      if (!ticket?.id) {
+        throw new Error('Ticket ID is required for saving');
+      }
+
+      if (!data) {
+        throw new Error('Form data is required for saving');
+      }
       
       // Convert TicketFormData to Ticket and handle contributor fields properly
       const ticketData: Ticket = {
@@ -253,51 +344,57 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
       <Controller
         name={name}
         control={control}
-        render={({ field }) => (
-          <div className="relative">
-            {isTextarea ? (
-              <textarea
-                {...field}
-                value={field.value || ''}
-                id={name}
-                rows={rows}
-                placeholder={placeholder}
-                className={`input-field resize-y scrollbar-thin ${
-                  errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                } ${
-                  maxLength && isCharacterLimitExceeded(String(field.value || ''), maxLength)
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : ''
-                }`}
-                disabled={isSaving}
-              />
-            ) : (
-              <input
-                {...field}
-                value={field.value || ''}
-                id={name}
-                type={type}
-                placeholder={placeholder}
-                className={`input-field ${
-                  errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
-                } ${
-                  maxLength && isCharacterLimitExceeded(String(field.value || ''), maxLength)
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : ''
-                }`}
-                disabled={isSaving}
-              />
-            )}
-            
-            {maxLength && (
-              <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-                <span className={isCharacterLimitExceeded(String(field.value || ''), maxLength) ? 'text-red-500' : ''}>
-                  {getCharacterCount(String(field.value || ''), maxLength)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+        render={({ field }) => {
+          // Ensure field value is always a string
+          const safeValue = field.value ?? '';
+          const stringValue = String(safeValue);
+          
+          return (
+            <div className="relative">
+              {isTextarea ? (
+                <textarea
+                  {...field}
+                  value={stringValue}
+                  id={name}
+                  rows={rows}
+                  placeholder={placeholder}
+                  className={`input-field resize-y scrollbar-thin ${
+                    errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                  } ${
+                    maxLength && isCharacterLimitExceeded(stringValue, maxLength)
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      : ''
+                  }`}
+                  disabled={isSaving}
+                />
+              ) : (
+                <input
+                  {...field}
+                  value={stringValue}
+                  id={name}
+                  type={type}
+                  placeholder={placeholder}
+                  className={`input-field ${
+                    errors[name] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                  } ${
+                    maxLength && isCharacterLimitExceeded(stringValue, maxLength)
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      : ''
+                  }`}
+                  disabled={isSaving}
+                />
+              )}
+              
+              {maxLength && (
+                <div className="absolute bottom-2 right-2 text-xs text-gray-500">
+                  <span className={isCharacterLimitExceeded(stringValue, maxLength) ? 'text-red-500' : ''}>
+                    {getCharacterCount(stringValue, maxLength)}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }}
       />
       
       {errors[name] && (
@@ -597,7 +694,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
             <button
               type="submit"
               className="btn-primary flex items-center gap-2"
-              disabled={isSaving || !isValid}
+              disabled={isSaving || (!isValid && Object.keys(errors).length > 0)}
             >
               {isSaving ? (
                 <>

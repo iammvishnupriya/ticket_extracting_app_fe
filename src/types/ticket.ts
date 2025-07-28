@@ -23,12 +23,16 @@ export interface Ticket {
   receivedDate: string;
   priority: Priority;
   ticketOwner: string;
-  contributor: string | Contributor; // Legacy field - kept for backward compatibility
-  contributors?: (string | Contributor)[]; // New field for multiple contributors
-  contributorId?: number; // Legacy ID of existing contributor
-  contributorIds?: number[]; // New field for multiple contributor IDs
-  contributorName?: string; // Legacy name of contributor (fallback option)
-  contributorNames?: string[]; // New field for multiple contributor names
+  // Legacy single contributor fields (backward compatibility)
+  contributor?: string | Contributor;
+  contributorId?: number;
+  contributorName?: string;
+  // NEW: Multiple contributors support (from backend)
+  contributors?: Contributor[]; // Array of full contributor objects
+  contributorNames?: string; // Comma-separated string for easy display
+  contributorIds?: number[]; // Array of contributor IDs
+  contributorIdsList?: number[]; // Alternative field name for backend compatibility
+  contributorCount?: number; // Count of contributors
   bugType: BugType;
   status: Status;
   review: string;
