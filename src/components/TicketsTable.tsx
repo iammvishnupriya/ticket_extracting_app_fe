@@ -487,18 +487,18 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
           </div>
         ) : (
           <div className="border border-gray-200 rounded-lg overflow-hidden">
-            {/* Fixed Table Header */}
-            <div className="overflow-x-auto bg-gray-50 border-b border-gray-200">
-              <table className="min-w-full">
-                <thead>
+            {/* Single Scrollable Table with Sticky Header */}
+            <div className="overflow-auto max-h-[60vh]">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 bg-gray-50">
                       <SortButton field="id">ID</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px] bg-gray-50">
                       <SortButton field="ticketSummary">Summary</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] bg-gray-50">
                       <div className="flex items-center gap-2">
                         <SortButton field="project">Project</SortButton>
                         {projectFilter && (
@@ -508,33 +508,27 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 bg-gray-50">
                       <SortButton field="status">Status</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 bg-gray-50">
                       <SortButton field="priority">Priority</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] bg-gray-50">
                       <SortButton field="ticketOwner">Owner</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px] bg-gray-50">
                       <SortButton field="contributor">Contributor</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 bg-gray-50">
                       <SortButton field="receivedDate">Date</SortButton>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 bg-gray-50">
                       Actions
                     </th>
                   </tr>
                 </thead>
-              </table>
-            </div>
-            
-            {/* Scrollable Table Body */}
-            <div className="overflow-auto max-h-[60vh] bg-white">
-              <table className="min-w-full">
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {filteredAndSortedTickets.map((ticket) => {
                     const priorityOption = getPriorityOption(ticket.priority);
                     const statusOption = getStatusOption(ticket.status);
