@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { Contributor, ContributorRequest } from '../types/contributor';
 import type { ApiError } from '../types/ticket';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5143';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -41,7 +41,7 @@ apiClient.interceptors.response.use(
     let message = 'An unexpected error occurred';
     
     if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-      message = 'Unable to connect to the backend server. Please ensure the Spring Boot application is running on port 8080.';
+      message = 'Unable to connect to the backend server. Please ensure the Spring Boot application is running on port 5143.';
     } else if (error.response?.data?.message) {
       message = error.response.data.message;
     } else if (error.message) {

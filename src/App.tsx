@@ -478,7 +478,7 @@ function App() {
               © 2025 Ticket Email Extraction System. Built with React + TypeScript + Vite.
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span>Backend: localhost:8080</span>
+              <span>Backend: localhost:5143</span>
               <span>•</span>
               <span>Frontend: {window.location.origin}</span>
             </div>
