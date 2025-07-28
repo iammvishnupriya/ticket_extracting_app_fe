@@ -107,14 +107,17 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(ticket => 
-        ticket.ticketSummary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.ticketOwner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.messageId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getContributorDisplayValue(ticket).toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(ticket => {
+        const searchTermLower = searchTerm.toLowerCase();
+        return (
+          (ticket.ticketSummary || '').toLowerCase().includes(searchTermLower) ||
+          (ticket.project || '').toLowerCase().includes(searchTermLower) ||
+          (ticket.ticketOwner || '').toLowerCase().includes(searchTermLower) ||
+          (ticket.employeeName || '').toLowerCase().includes(searchTermLower) ||
+          (ticket.messageId || '').toLowerCase().includes(searchTermLower) ||
+          (getContributorDisplayValue(ticket) || '').toLowerCase().includes(searchTermLower)
+        );
+      });
     }
 
     // Apply status filter
@@ -130,7 +133,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     // Apply project filter
     if (projectFilter) {
       filtered = filtered.filter(ticket => 
-        ticket.project.toLowerCase().includes(projectFilter.toLowerCase())
+        (ticket.project || '').toLowerCase().includes(projectFilter.toLowerCase())
       );
     }
 

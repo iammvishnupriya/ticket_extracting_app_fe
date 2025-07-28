@@ -196,8 +196,10 @@ export const generateMessageId = (): string => {
 
 export const getContributorName = (contributor: string | any): string => {
   if (!contributor) return '';
-  if (typeof contributor === 'string') return contributor;
-  if (typeof contributor === 'object' && contributor.name) return contributor.name;
+  if (typeof contributor === 'string') return contributor.trim();
+  if (typeof contributor === 'object' && contributor !== null && contributor.name) {
+    return typeof contributor.name === 'string' ? contributor.name.trim() : '';
+  }
   return '';
 };
 
@@ -212,6 +214,9 @@ export const getContributorNamesString = (contributors: (string | any)[] | undef
 };
 
 export const getContributorDisplayValue = (ticket: any): string => {
+  // Handle null/undefined ticket
+  if (!ticket) return '';
+  
   // First try the new contributors array
   if (ticket.contributors && Array.isArray(ticket.contributors) && ticket.contributors.length > 0) {
     return getContributorNamesString(ticket.contributors);
