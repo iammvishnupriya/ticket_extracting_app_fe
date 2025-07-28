@@ -123,7 +123,7 @@ export const ticketService = {
         // Send contributors array to backend
         ticketData.contributors = ticket.contributors;
         ticketData.contributorIds = ticket.contributorIds || [];
-        ticketData.contributorNames = ticket.contributorNames || [];
+        ticketData.contributorNames = ticket.contributorNames || '';
         
         // For backward compatibility, set first contributor as primary
         const firstContributor = ticket.contributors[0];

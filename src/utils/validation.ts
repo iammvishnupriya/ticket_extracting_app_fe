@@ -23,8 +23,7 @@ export const ticketValidationSchema = z.object({
     .min(1, 'Ticket owner is required')
     .max(100, 'Ticket owner must be less than 100 characters'),
   
-  contributor: z.string()
-    .max(500, 'Contributor must be less than 500 characters')
+  contributor: z.union([z.string(), z.any()])
     .optional()
     .default(''),
   
@@ -45,12 +44,10 @@ export const ticketValidationSchema = z.object({
     .optional()
     .default(''),
   
-  contributorNames: z.union([
-    z.array(z.string().max(500, 'Contributor name must be less than 500 characters')).max(10, 'Maximum 10 contributors allowed'),
-    z.string().max(1000, 'Contributor names must be less than 1000 characters')
-  ])
+  contributorNames: z.string()
+    .max(1000, 'Contributor names must be less than 1000 characters')
     .optional()
-    .default([]),
+    .default(''),
   
   bugType: z.enum(['BUG', 'ENHANCEMENT', 'TASK'] as const),
   

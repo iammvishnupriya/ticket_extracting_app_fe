@@ -98,8 +98,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
         contributors: (ticketData?.contributors && Array.isArray(ticketData.contributors)) ? ticketData.contributors : 
           (ticketData?.contributor ? [ticketData.contributor] : []),
         contributorIds: Array.isArray(ticketData?.contributorIds) ? ticketData.contributorIds : [],
-        contributorNames: Array.isArray(ticketData?.contributorNames) ? ticketData.contributorNames : 
-          (typeof ticketData?.contributorNames === 'string' ? ticketData.contributorNames : []),
+        contributorNames: typeof ticketData?.contributorNames === 'string' ? ticketData.contributorNames : '',
         bugType: ticketData?.bugType || 'BUG',
         status: ticketData?.status || 'NEW',
         review: ticketData?.review || '',
@@ -122,7 +121,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
         contributor: '',
         contributors: [],
         contributorIds: [],
-        contributorNames: [],
+        contributorNames: '',
         bugType: 'BUG' as const,
         status: 'NEW' as const,
         review: '',
@@ -256,7 +255,7 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
 
         ticketData.contributors = processedContributors;
         ticketData.contributorIds = contributorIds;
-        ticketData.contributorNames = contributorNames;
+        ticketData.contributorNames = contributorNames.join(', ');
 
         // For backward compatibility, set the first contributor as the primary one
         if (processedContributors.length > 0) {
@@ -264,8 +263,10 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
           if (contributorIds.length > 0) {
             ticketData.contributorId = contributorIds[0];
           }
-          if (contributorNames.length > 0) {
-            ticketData.contributorName = contributorNames[0];
+          // Get first contributor name from the comma-separated string
+          const firstContributorName = ticketData.contributorNames?.split(', ')[0];
+          if (firstContributorName) {
+            ticketData.contributorName = firstContributorName;
           }
         }
       } else {
@@ -280,12 +281,12 @@ export const TicketEditor: React.FC<TicketEditorProps> = ({
               // Also populate the new arrays for consistency
               ticketData.contributors = [foundContributor];
               ticketData.contributorIds = [foundContributor.id];
-              ticketData.contributorNames = [foundContributor.name];
+              ticketData.contributorNames = foundContributor.name;
             } else {
               ticketData.contributor = data.contributor;
               ticketData.contributorName = data.contributor;
-              ticketData.contributors = [data.contributor];
-              ticketData.contributorNames = [data.contributor];
+              ticketData.contributors = [data.contributor as any]; // String contributor for backward compatibility
+              ticketData.contributorNames = data.contributor;
               delete ticketData.contributorId;
             }
           }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -41,7 +42,7 @@ const contributorSchema = z.object({
   employeeId: z.string().optional(),
   department: z.string().optional(),
   phone: z.string().optional(),
-  active: z.boolean().default(true),
+  active: z.boolean(),
   notes: z.string().optional(),
 });
 
@@ -193,7 +194,7 @@ export const ContributorsManagement: React.FC<ContributorsManagementProps> = ({ 
     }
   };
 
-  const handleFormSubmit = async (data: ContributorFormData) => {
+  const handleFormSubmit: SubmitHandler<ContributorFormData> = async (data) => {
     try {
       setIsSubmitting(true);
       clearErrors();
