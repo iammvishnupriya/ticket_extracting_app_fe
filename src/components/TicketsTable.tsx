@@ -111,6 +111,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         const searchTermLower = searchTerm.toLowerCase();
         return (
           (ticket.ticketSummary || '').toLowerCase().includes(searchTermLower) ||
+          (ticket.issueDescription || '').toLowerCase().includes(searchTermLower) ||
           (ticket.project || '').toLowerCase().includes(searchTermLower) ||
           (ticket.ticketOwner || '').toLowerCase().includes(searchTermLower) ||
           (ticket.employeeName || '').toLowerCase().includes(searchTermLower) ||
@@ -308,7 +309,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search summary, owner, contributor, employee..."
+                placeholder="Search summary, description, owner, contributor, employee..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input-field pl-10"
