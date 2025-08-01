@@ -1,6 +1,6 @@
 export type Priority = 'LOW' | 'PRIORITY' | 'MODERATE' | 'HIGH';
 export type BugType = 'BUG' | 'ENHANCEMENT' | 'TASK';
-export type Status = 'ASSIGNED' | 'OPENED' | 'CLOSED' | 'FIXED' | 'NEW' | 'PENDING' | 'RESOLVED';
+export type Status = 'ASSIGNED' | 'OPENED' | 'CLOSED' | 'FIXED' | 'NEW' | 'IN_PROGRESS' | 'ONHOLD';
 
 export interface Contributor {
   id: number;
@@ -71,11 +71,14 @@ export const BUG_TYPE_OPTIONS: { value: BugType; label: string; color: string }[
 ];
 
 export const STATUS_OPTIONS: { value: Status; label: string; color: string }[] = [
-  { value: 'NEW', label: 'New', color: 'bg-gray-100 text-gray-800' },
-  { value: 'ASSIGNED', label: 'Assigned', color: 'bg-blue-100 text-blue-800' },
-  { value: 'OPENED', label: 'Opened', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'PENDING', label: 'Pending', color: 'bg-orange-100 text-orange-800' },
+  { value: 'NEW', label: 'New', color: 'bg-blue-100 text-blue-800' }, // Highlighted
+  { value: 'ASSIGNED', label: 'Assigned', color: 'bg-gray-100 text-gray-800' },
+  { value: 'OPENED', label: 'Opened', color: 'bg-yellow-100 text-yellow-800' }, // Highlighted
+  { value: 'IN_PROGRESS', label: 'In-progress', color: 'bg-orange-100 text-orange-800' }, // Highlighted
   { value: 'FIXED', label: 'Fixed', color: 'bg-green-100 text-green-800' },
-  { value: 'RESOLVED', label: 'Resolved', color: 'bg-green-100 text-green-800' },
+  { value: 'ONHOLD', label: 'On-hold', color: 'bg-green-100 text-green-800' },
   { value: 'CLOSED', label: 'Closed', color: 'bg-gray-100 text-gray-800' },
 ];
+
+// List of statuses that get row/card highlighting
+export const HIGHLIGHTED_STATUSES: Status[] = ['NEW', 'IN_PROGRESS', 'OPENED'];

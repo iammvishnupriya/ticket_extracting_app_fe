@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { 
   PRIORITY_OPTIONS, 
-  STATUS_OPTIONS
+  STATUS_OPTIONS,
+  HIGHLIGHTED_STATUSES
 } from '../types/ticket';
 import type { 
   Ticket, 
@@ -218,6 +219,24 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       )}
     </button>
   );
+
+  // Function to get row styling based on ticket status
+  const getRowStyling = (status: Status) => {
+    if (HIGHLIGHTED_STATUSES.includes(status)) {
+      switch (status) {
+        case 'NEW':
+          return 'ticket-highlight-new';
+        case 'IN_PROGRESS':
+          return 'ticket-highlight-in-progress';
+        case 'OPENED':
+          return 'ticket-highlight-opened';
+        default:
+          return 'hover:bg-gray-50';
+      }
+    }
+    
+    return 'hover:bg-gray-50';
+  };
 
   if (isLoading) {
     return (
@@ -531,9 +550,10 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 {filteredAndSortedTickets.map((ticket) => {
                   const priorityOption = getPriorityOption(ticket.priority);
                   const statusOption = getStatusOption(ticket.status);
+                  const rowStyling = getRowStyling(ticket.status);
                   
                   return (
-                    <tr key={ticket.id} className="hover:bg-gray-50">
+                    <tr key={ticket.id} className={`transition-all duration-200 ${rowStyling}`}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         #{ticket.id}
                       </td>

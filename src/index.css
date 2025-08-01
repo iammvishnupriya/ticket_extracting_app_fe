@@ -172,3 +172,34 @@
     transform: translateY(0);
   }
 }
+
+/* Status highlighting for tickets - BRIGHT COLORS */
+.ticket-highlight-new {
+  @apply bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 border-l-4 border-blue-500 shadow-md;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.ticket-highlight-in-progress {
+  @apply bg-gradient-to-r from-orange-100 to-orange-50 hover:from-orange-200 hover:to-orange-100 border-l-4 border-orange-500 shadow-md;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+}
+
+.ticket-highlight-opened {
+  @apply bg-gradient-to-r from-yellow-100 to-yellow-50 hover:from-yellow-200 hover:to-yellow-100 border-l-4 border-yellow-500 shadow-md;
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.15);
+}
+
+.ticket-card-highlight-new {
+  @apply border-l-4 border-blue-500 bg-gradient-to-r from-blue-100 to-blue-50 shadow-lg;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.ticket-card-highlight-in-progress {
+  @apply border-l-4 border-orange-500 bg-gradient-to-r from-orange-100 to-orange-50 shadow-lg;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+}
+
+.ticket-card-highlight-opened {
+  @apply border-l-4 border-yellow-500 bg-gradient-to-r from-yellow-100 to-yellow-50 shadow-lg;
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.2);
+}

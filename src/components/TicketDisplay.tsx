@@ -19,7 +19,7 @@ import {
   Ticket,
   ArrowLeft
 } from 'lucide-react';
-import { PRIORITY_OPTIONS, BUG_TYPE_OPTIONS, STATUS_OPTIONS } from '../types/ticket';
+import { PRIORITY_OPTIONS, BUG_TYPE_OPTIONS, STATUS_OPTIONS, HIGHLIGHTED_STATUSES } from '../types/ticket';
 import type { Ticket as TicketType } from '../types/ticket';
 import { formatDate, copyToClipboard, downloadAsJSON, truncateText, getContributorName, getContributorDisplayValue } from '../utils/validation';
 import toast from 'react-hot-toast';
@@ -120,8 +120,26 @@ export const TicketDisplay: React.FC<TicketDisplayProps> = ({
   const bugTypeOption = getBugTypeOption(ticket.bugType);
   const statusOption = getStatusOption(ticket.status);
 
+  // Function to get card styling based on ticket status
+  const getCardStyling = (status: string) => {
+    if (HIGHLIGHTED_STATUSES.includes(status as any)) {
+      switch (status) {
+        case 'NEW':
+          return 'card animate-slide-up ticket-card-highlight-new';
+        case 'IN_PROGRESS':
+          return 'card animate-slide-up ticket-card-highlight-in-progress';
+        case 'OPENED':
+          return 'card animate-slide-up ticket-card-highlight-opened';
+        default:
+          return 'card animate-slide-up';
+      }
+    }
+    
+    return 'card animate-slide-up';
+  };
+
   return (
-    <div className="card animate-slide-up">
+    <div className={getCardStyling(ticket.status)}>
       <div className="card-header">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

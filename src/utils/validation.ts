@@ -51,7 +51,7 @@ export const ticketValidationSchema = z.object({
   
   bugType: z.enum(['BUG', 'ENHANCEMENT', 'TASK'] as const),
   
-  status: z.enum(['ASSIGNED', 'OPENED', 'CLOSED', 'FIXED', 'NEW', 'PENDING', 'RESOLVED'] as const),
+  status: z.enum(['ASSIGNED', 'OPENED', 'CLOSED', 'FIXED', 'NEW', 'IN_PROGRESS', 'ONHOLD'] as const),
   
   review: z.string()
     .max(1000, 'Review must be less than 1000 characters')
